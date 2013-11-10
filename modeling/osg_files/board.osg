@@ -70,10 +70,10 @@ MatrixTransform {
             }
             TexMat {
               UniqueID TexMat_3
-              4 0 0 0
-              0 4 0 0
+              2 0 0 0
+              0 2 0 0
               0 0 1 0
-              -1.5 -1.5 0 1
+              -0.5 -0.5 0 1
             }
           }
         }
@@ -105,7 +105,7 @@ MatrixTransform {
         ColorBinding OVERALL
         ColorArray Vec4Array 1
         {
-          0.54902 0.345098 0.882353 1
+          1 1 1 1
         }
         TexCoordArray 0 Vec2Array 6
         {
