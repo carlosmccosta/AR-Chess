@@ -1,0 +1,264 @@
+#Ascii Scene 
+#Version 73 
+#Generator OpenSceneGraph 2.9.13 
+
+osg::MatrixTransform {
+  UniqueID 1 
+  Name "Scene Root" 
+  DataVariance STATIC 
+  StateSet TRUE {
+    osg::StateSet {
+      UniqueID 2 
+      ModeList 2 {
+        GL_LIGHTING ON 
+        GL_NORMALIZE ON 
+      }
+    }
+  }
+  Children 1 {
+    osg::MatrixTransform {
+      UniqueID 3 
+      Name "Box001" 
+      DataVariance STATIC 
+      Children 1 {
+        osg::Geode {
+          UniqueID 4 
+          Name "Box001-GEODE" 
+          DataVariance STATIC 
+          Drawables 1 {
+            osg::Geometry {
+              UniqueID 5 
+              Name "Material #7" 
+              StateSet TRUE {
+                osg::StateSet {
+                  UniqueID 6 
+                  Name "Material #7" 
+                  ModeList 3 {
+                    GL_CULL_FACE ON 
+                    GL_LIGHTING ON 
+                    GL_NORMALIZE ON 
+                  }
+                  TextureModeList 2 {
+                    Data 1 {
+                      GL_TEXTURE_2D ON 
+                    }
+                    Data 1 {
+                      GL_TEXTURE_2D ON 
+                    }
+                  }
+                  TextureAttributeList 2 {
+                    Data 2 {
+                      osg::Texture2D {
+                        UniqueID 7 
+                        WRAP_S REPEAT 
+                        WRAP_T REPEAT 
+                        WRAP_R CLAMP_TO_EDGE 
+                        MIN_FILTER LINEAR_MIPMAP_LINEAR 
+                        MAG_FILTER LINEAR 
+                        UnRefImageDataAfterApply TRUE 
+                        ResizeNonPowerOfTwoHint FALSE 
+                        Image TRUE {
+                          UniqueID 8 
+                          FileName "images\\Map0.tga" 
+                          WriteHint 0 2 
+                          DataVariance STATIC 
+                        }
+                      }
+                      Value OFF 
+                      osg::TexMat {
+                        UniqueID 9 
+                        Matrix {
+                          2 0 0 0 
+                          0 2 0 0 
+                          0 0 1 0 
+                          -0.5 -0.5 0 1 
+                        }
+                        
+                      }
+                      Value OFF 
+                    }
+                    Data 1 {
+                      osg::Texture2D {
+                        UniqueID 10 
+                        WRAP_S REPEAT 
+                        WRAP_T REPEAT 
+                        WRAP_R CLAMP_TO_EDGE 
+                        MIN_FILTER LINEAR_MIPMAP_LINEAR 
+                        MAG_FILTER LINEAR 
+                        UnRefImageDataAfterApply TRUE 
+                        ResizeNonPowerOfTwoHint FALSE 
+                        Image TRUE {
+                          UniqueID 11 
+                          FileName "images\\Map1.tga" 
+                          WriteHint 0 2 
+                          DataVariance STATIC 
+                        }
+                      }
+                      Value OFF 
+                    }
+                  }
+                }
+              }
+              PrimitiveSetList 1 {
+                DrawArrays GL_TRIANGLES 0 36 
+                
+              }
+              VertexData {
+                Array TRUE ArrayID 1 Vec3fArray 36 {
+                  -360 -20 0 
+                  -360 20 0 
+                  360 20 0 
+                  360 20 0 
+                  360 -20 0 
+                  -360 -20 0 
+                  -360 -20 720 
+                  360 -20 720 
+                  360 20 720 
+                  360 20 720 
+                  -360 20 720 
+                  -360 -20 720 
+                  -360 -20 0 
+                  360 -20 0 
+                  360 -20 720 
+                  360 -20 720 
+                  -360 -20 720 
+                  -360 -20 0 
+                  360 -20 0 
+                  360 20 0 
+                  360 20 720 
+                  360 20 720 
+                  360 -20 720 
+                  360 -20 0 
+                  360 20 0 
+                  -360 20 0 
+                  -360 20 720 
+                  -360 20 720 
+                  360 20 720 
+                  360 20 0 
+                  -360 20 0 
+                  -360 -20 0 
+                  -360 -20 720 
+                  -360 -20 720 
+                  -360 20 720 
+                  -360 20 0 
+                }
+                Indices FALSE 
+                Binding BIND_PER_VERTEX 
+                Normalize 0 
+              }
+              NormalData {
+                Array TRUE ArrayID 2 Vec3fArray 36 {
+                  0 0 -1 
+                  0 0 -1 
+                  0 0 -1 
+                  0 0 -1 
+                  0 0 -1 
+                  0 0 -1 
+                  0 0 1 
+                  0 -0 1 
+                  0 0 1 
+                  0 0 1 
+                  -0 0 1 
+                  0 0 1 
+                  0 -1 0 
+                  0 -1 0 
+                  0 -1 0 
+                  0 -1 0 
+                  0 -1 0 
+                  0 -1 0 
+                  1 0 0 
+                  1 0 -0 
+                  1 0 0 
+                  1 0 0 
+                  1 -0 0 
+                  1 0 0 
+                  0 1 0 
+                  0 1 0 
+                  0 1 0 
+                  0 1 0 
+                  0 1 0 
+                  0 1 0 
+                  -1 0 0 
+                  -1 0 0 
+                  -1 0 0 
+                  -1 0 0 
+                  -1 -0 -0 
+                  -1 0 0 
+                }
+                Indices FALSE 
+                Binding BIND_PER_VERTEX 
+                Normalize 0 
+              }
+              ColorData {
+                Array TRUE ArrayID 3 Vec4fArray 1 {
+                  1 1 1 1 
+                }
+                Indices FALSE 
+                Binding BIND_OVERALL 
+                Normalize 0 
+              }
+              TexCoordData 2 {
+                Data {
+                  Array TRUE ArrayID 4 Vec2fArray 36 {
+                    1 0 
+                    1 1 
+                    0 1 
+                    0 1 
+                    0 0 
+                    1 0 
+                    0 0 
+                    1 0 
+                    1 1 
+                    1 1 
+                    0 1 
+                    0 0 
+                    0 0 
+                    1 0 
+                    1 1 
+                    1 1 
+                    0 1 
+                    0 0 
+                    0 0 
+                    1 0 
+                    1 1 
+                    1 1 
+                    0 1 
+                    0 0 
+                    0 0 
+                    1 0 
+                    1 1 
+                    1 1 
+                    0 1 
+                    0 0 
+                    0 0 
+                    1 0 
+                    1 1 
+                    1 1 
+                    0 1 
+                    0 0 
+                  }
+                  Indices FALSE 
+                  Binding BIND_PER_VERTEX 
+                  Normalize 0 
+                }
+                Data {
+                  Array TRUE ArrayID 4 
+                  Indices FALSE 
+                  Binding BIND_PER_VERTEX 
+                  Normalize 0 
+                }
+              }
+            }
+          }
+        }
+      }
+      Matrix {
+        -1.62921e-007 -1 0 0 
+        -4.37114e-008 7.12149e-015 1 0 
+        -1 1.62921e-007 -4.37114e-008 0 
+        500.899 -311.474 -99.4439 1 
+      }
+      
+    }
+  }
+}
