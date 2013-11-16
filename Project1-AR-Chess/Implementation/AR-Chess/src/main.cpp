@@ -1,12 +1,8 @@
-#include <osgART/Foundation>
-
-#include "Scene.h"
+#include "ChessScene.h"
 
 
-int main(int argc, char* argv[]) {
-	osgARTInit(&argc, argv);
-
-	Scene scene;
+int main(int argc, char* argv[]) {	
+	ChessScene scene;
 	scene.startGame();
 	scene.endGame();
 }
