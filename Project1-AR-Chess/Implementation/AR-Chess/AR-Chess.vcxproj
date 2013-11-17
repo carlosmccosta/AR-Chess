@@ -77,11 +77,14 @@
     <ClCompile Include="src\ChessPiece.cpp" />
     <ClCompile Include="src\ChessScene.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\ChessUtils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ChessBoard.h" />
     <ClInclude Include="src\ChessPiece.h" />
     <ClInclude Include="src\ChessScene.h" />
+    <ClInclude Include="src\ChessUtils.h" />
+    <ClInclude Include="src\ModelsConfigs.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
