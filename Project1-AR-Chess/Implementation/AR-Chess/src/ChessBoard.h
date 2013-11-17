@@ -25,11 +25,14 @@ class ChessBoard {
 	public:
 		ChessBoard();
 		virtual ~ChessBoard();
-		MatrixTransform* setupBoard();
+		MatrixTransform* setupBoard();		
 
 	private:
 		vector<ChessPiece> _whiteChessPieces;
 		vector<ChessPiece> _blackChessPieces;
 		MatrixTransform* _boardMatrixTransform;
+		Material* _boardMaterial;
+		Material* _whitePiecesMaterial;
+		Material* _blackPiecesMaterial;
 };
 

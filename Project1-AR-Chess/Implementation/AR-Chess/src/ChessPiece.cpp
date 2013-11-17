@@ -1,8 +1,7 @@
 #include "ChessPiece.h"
 
 
-ChessPiece::ChessPiece() {}
-ChessPiece::ChessPiece(ChessPieceType chessPieceType, ChessPieceColor chessPieceColor, int xPosition, int yPosition) :
+ChessPiece::ChessPiece(ChessPieceType chessPieceType, ChessPieceColor chessPieceColor, int xPosition, int yPosition, Material* material) :
 	_chessPieceType(chessPieceType),
 	_chessPieceColor(chessPieceColor),
 	_xPosition(xPosition),
@@ -17,13 +16,16 @@ ChessPiece::ChessPiece(ChessPieceType chessPieceType, ChessPieceColor chessPiece
 	Vec3f rotationAxis = Vec3f(0.0, 0.0, 1.0);
 	
 	// rotate knights to face each other
-	if (chessPieceType == KNIGHT) {
-		if (xPosition < 0) {
-			rotationAngle = osg::PI;
-		}
+	if (chessPieceType == KNIGHT && xPosition < 0) {		
+		rotationAngle = osg::PI;
 	}
 
-	_pieceMatrixTransform = ChessUtils::loadOSGModel(name, modelSize, pieceScenePosition, rotationAngle, rotationAxis);
+	if (chessPieceType == BISHOP && xPosition > 0) {		
+		rotationAngle = osg::PI;
+	}
+
+	_pieceMatrixTransform = ChessUtils::loadOSGModel(name, modelSize, material, pieceScenePosition, rotationAngle, rotationAxis);
+	_pieceMatrixTransform->setNodeMask(CAST_SHADOW_MASK);
 }
 
 ChessPiece::~ChessPiece() {}
@@ -116,7 +118,7 @@ float ChessPiece::getPieceModelSize(ChessPieceType chessPieceType) {
 Vec3f ChessPiece::computePieceScenePosition(int xPosition, int yPosition) {
 	float shiftX = xPosition * BOARD_SQUARE_SIZE;
 	float shiftY = yPosition * BOARD_SQUARE_SIZE;
-	float shiftZ = BOARD_HEIGHT / 2.0;
+	float shiftZ = PIECE_HEIGHT_OFFSET;
 
 	// adjust position to middle of square
 	double halfSquareSize = BOARD_SQUARE_SIZE / 2.0;
