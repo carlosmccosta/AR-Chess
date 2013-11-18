@@ -32,14 +32,14 @@ namespace ChessUtils {
 		float xModelCenterOffsetPercentage = 0, float yModelCenterOffsetPercentage = 0, float zModelCenterOffsetPercentage = 0.5);
 
 	LightSource* createLightSource(StateSet* stateSet,
-		int lightNumber = 1,
+		int lightNumber = 1,		
 		Vec4 position = Vec4(0.0f, 0.0f, 50.0f, 1.0f),
-		Vec3 direction = Vec3(0.0, 0.0, -1.0),
+		Vec3 direction = Vec3(0.0, 0.0, -1.0),		
+		float spotCutoff = 180, float spotExponent = 128,
+		float constanteAttenuation = 1.0f,
 		Vec4 ambientLight = Vec4(0.0f, 0.0f, 0.0f, 0.0f),
 		Vec4 diffuseLight = Vec4(0.2f, 0.2f, 0.2f, 0.2f),
-		Vec4 specularLight = Vec4(1.0f, 1.0f, 1.0f, 1.0f),
-		float constanteAttenuation = 1.0f,		
-		float spotCutoff = 180, float spotExponent = 128);
+		Vec4 specularLight = Vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
 
 	Material* createMaterial(float shininess = 128.0,

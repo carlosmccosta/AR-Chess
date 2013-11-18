@@ -79,17 +79,23 @@ void ChessScene::setupBoard() {
 	shadowMap->setLight(_mainLightSource->getLight());
 	boardShadowedScene->setShadowTechnique(shadowMap);
 
+	/*osg::LightModel* lightModel = new osg::LightModel();
+	lightModel->setColorControl(osg::LightModel::ColorControl::SEPARATE_SPECULAR_COLOR);
+	boardShadowedScene->getOrCreateStateSet()->setAttributeAndModes(lightModel, osg::StateAttribute::ON);*/
+	
 	/*_specularHighlights = new osgFX::SpecularHighlights();
-	_specularHighlights->setTextureUnit(0);
+	_specularHighlights->setTextureUnit(2);
 	_specularHighlights->setLightNumber(0);
-	_specularHighlights->setSpecularColor(osg::Vec4(0.5f, 0.5f, 0.5f, 1.0f));
+	_specularHighlights->setSpecularColor(osg::Vec4(1.0f, 1.0f, 1.0f, 1.0f));
 	_specularHighlights->setSpecularExponent(16.0f);
-	_specularHighlights->addChild(boardMT);*/
+	_specularHighlights->addChild(boardShadowedScene);
+	_boardTrackerMT->addChild(_specularHighlights);*/
 
 	/*_anisotropicLighting = new osgFX::AnisotropicLighting();
 	_anisotropicLighting->setLightNumber(0);
 	_anisotropicLighting->setLightingMap(new osg::Image());
-	_anisotropicLighting->addChild(boardMT);*/
+	_anisotropicLighting->addChild(boardShadowedScene);
+	_boardTrackerMT->addChild(_anisotropicLighting);*/
 
 	_boardTrackerMT->addChild(boardShadowedScene);
 }
@@ -104,6 +110,7 @@ void ChessScene::setupLights() {
 	//stateSet->setMode(GL_LIGHT0, osg::StateAttribute::ON);
 	
 	_mainLightSource = ChessUtils::createLightSource(stateSet, 0, Vec4(0, 0, BOARD_SIZE * 0.8, 1.0), Vec3(0, 0, -1));
+	//_mainLightSource = ChessUtils::createLightSource(stateSet, 0, Vec4(BOARD_SIZE * 0.5, 0, BOARD_SIZE * 0.15, 1.0), Vec3(-BOARD_SIZE * 0.5, 0, -BOARD_SIZE * 0.08));
 
 	/*osg::Geode* geode = new osg::Geode();
 	osg::ShapeDrawable* sd = new osg::ShapeDrawable(new osg::Sphere(osg::Vec3(0, 0, 10), 10));
@@ -114,7 +121,8 @@ void ChessScene::setupLights() {
 
 	float supportLightsOffset = BOARD_SIZE * 0.75;
 	float supportLightsHeight = 10;
-	_lightGroup->addChild(_mainLightSource);	
+	_lightGroup->addChild(_mainLightSource);
+	_lightGroup->addChild(ChessUtils::createLightSource(stateSet, 1, Vec4(0, 0, BOARD_SIZE * 0.8, 1.0), Vec3(0, 0, -1), 22.5, 128, 1.0, Vec4(1.0f, 1.0f, 1.0f, 1.0f), Vec4(1.0f, 1.0f, 1.0f, 1.0f), Vec4(1.0f, 1.0f, 1.0f, 1.0f)));
 	_lightGroup->addChild(ChessUtils::createLightSource(stateSet, 1, Vec4(-supportLightsOffset, -supportLightsOffset, supportLightsHeight, 1.0), Vec3(supportLightsOffset, supportLightsOffset, -supportLightsHeight)));
 	_lightGroup->addChild(ChessUtils::createLightSource(stateSet, 2, Vec4(-supportLightsOffset, supportLightsOffset, supportLightsHeight, 1.0), Vec3(supportLightsOffset, -supportLightsOffset, -supportLightsHeight)));
 	_lightGroup->addChild(ChessUtils::createLightSource(stateSet, 3, Vec4(supportLightsOffset, supportLightsOffset, supportLightsHeight, 1.0), Vec3(-supportLightsOffset, -supportLightsOffset, -supportLightsHeight)));

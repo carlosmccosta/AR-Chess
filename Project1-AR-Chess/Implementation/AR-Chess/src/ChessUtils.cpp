@@ -51,9 +51,11 @@ MatrixTransform* ChessUtils::loadOSGModel(string name, float modelSize, Material
 }
 
 
-LightSource* ChessUtils::createLightSource(StateSet* stateSet, int lightNumber, Vec4 position, Vec3 direction,
-	Vec4 ambientLight, Vec4 diffuseLight, Vec4 specularLight, float constanteAttenuation,
-	float spotCutoff, float spotExponent) {
+LightSource* ChessUtils::createLightSource(StateSet* stateSet, int lightNumber,	
+	Vec4 position, Vec3 direction,	
+	float spotCutoff, float spotExponent,
+	float constanteAttenuation,
+	Vec4 ambientLight, Vec4 diffuseLight, Vec4 specularLight) {
 	Light* light = new Light();
 	light->setLightNum(lightNumber);
 	light->setPosition(position);

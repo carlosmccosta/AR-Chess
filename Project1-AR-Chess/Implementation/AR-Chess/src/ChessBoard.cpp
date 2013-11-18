@@ -3,27 +3,27 @@
 
 ChessBoard::ChessBoard() {
 	// materials setup
-	float boardShininess = 32.0;
+	float boardShininess = 128.0;
 	Vec4 boardEmission = Vec4(0.0f, 0.0f, 0.0f, 0.0f);
 	Vec4 boardSpecular = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	Vec4 boardDiffuse = Vec4(0.2f, 0.2f, 0.2f, 0.5f);
+	Vec4 boardDiffuse = Vec4(0.4f, 0.4f, 0.4f, 0.5f);
 	Vec4 boardAmbient = Vec4(0.05f, 0.05f, 0.05f, 0.05f);
 	_boardMaterial = ChessUtils::createMaterial(boardShininess, boardEmission, boardSpecular, boardDiffuse, boardAmbient);
 	//_boardMaterial = NULL;
 
-	float whitePieceShininess = 64.0;
+	float whitePieceShininess = 128.0;
 	Vec4 whitePieceEmission = Vec4(0.0f, 0.0f, 0.0f, 0.0f);
 	Vec4 whitePieceSpecular = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	Vec4 whitePieceDiffuse = Vec4(1.0f, 1.0f, 1.0f, 0.5f);
-	Vec4 whitePieceAmbient = Vec4(0.05f, 0.05f, 0.05f, 0.05f);
+	Vec4 whitePieceDiffuse = Vec4(0.05f, 0.05f, 0.05f, 0.5f);
+	Vec4 whitePieceAmbient = Vec4(0.02f, 0.02f, 0.02f, 0.2f);
 	_whitePiecesMaterial = ChessUtils::createMaterial(whitePieceShininess, whitePieceEmission, whitePieceSpecular, whitePieceDiffuse, whitePieceAmbient);
 	//_whitePiecesMaterial = NULL;
 
 	float blackPieceShininess = 128.0;
 	Vec4 blackPieceEmission = Vec4(0.0f, 0.0f, 0.0f, 0.0f);
 	Vec4 blackPieceSpecular = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	Vec4 blackPieceDiffuse = Vec4(0.0f, 0.0f, 0.0f, 0.8f);
-	Vec4 blackPieceAmbient = Vec4(0.05f, 0.05f, 0.05f, 0.05f);
+	Vec4 blackPieceDiffuse = Vec4(0.05f, 0.05f, 0.05f, 0.5f);
+	Vec4 blackPieceAmbient = Vec4(0.02f, 0.02f, 0.02f, 0.2f);
 	_blackPiecesMaterial = ChessUtils::createMaterial(blackPieceShininess, blackPieceEmission, blackPieceSpecular, blackPieceDiffuse, blackPieceAmbient);
 	//_blackPiecesMaterial = NULL;
 

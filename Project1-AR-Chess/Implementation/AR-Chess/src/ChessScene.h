@@ -5,6 +5,7 @@
 // OSG includes
 #include <osg/MatrixTransform>
 #include <osg/ShapeDrawable>
+#include <osg/LightModel>
 #include <osgViewer/Viewer>
 #include <osgViewer/ViewerEventHandlers>
 #include <osgGA/TrackballManipulator>
