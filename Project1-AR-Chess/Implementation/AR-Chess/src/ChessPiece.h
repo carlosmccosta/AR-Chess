@@ -4,6 +4,7 @@
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  <includes> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 // OSG includes
 #include <osg/MatrixTransform>
+#include <osg/Material>
 
 // project includes
 #include "ChessUtils.h"
@@ -13,6 +14,7 @@
 // namespace specific imports to avoid namespace pollution
 using osg::MatrixTransform;
 using osg::Vec3f;
+using osg::Material;
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  </includes> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
@@ -33,9 +35,8 @@ enum ChessPieceColor{
 
 
 class ChessPiece {
-	public:
-		ChessPiece();
-		ChessPiece(ChessPieceType chessPieceType, ChessPieceColor chessPieceColor, int xPosition, int yPosition);
+	public:		
+		ChessPiece(ChessPieceType chessPieceType, ChessPieceColor chessPieceColor, int xPosition, int yPosition, Material* material);
 		virtual ~ChessPiece();
 		
 		string getPieceModelPath(ChessPieceType chessPieceType, ChessPieceColor chessPieceColor);

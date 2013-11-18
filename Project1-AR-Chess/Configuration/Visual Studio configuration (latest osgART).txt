@@ -167,6 +167,8 @@ osgART_debug.lib
 osgd.lib
 osgDBd.lib
 osgGAd.lib
+osgFXd.lib
+osgShadowd.lib
 osgViewerd.lib
 
 -> Project properties -> Configuration Properties -> Linker -> Advanced -> Image Has Safe Exceptions Handles
