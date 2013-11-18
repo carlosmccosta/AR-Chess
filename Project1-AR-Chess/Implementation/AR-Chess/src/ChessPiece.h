@@ -40,12 +40,15 @@ class ChessPiece {
 		virtual ~ChessPiece();
 		
 		string getPieceModelPath(ChessPieceType chessPieceType, ChessPieceColor chessPieceColor);
-		float getPieceModelSize(ChessPieceType chessPieceType);
-		Vec3f computePieceScenePosition(int xPosition, int yPosition);
+		float getPieceModelSize(ChessPieceType chessPieceType);		
 
 		bool changePosition(int xPosition, int yPosition);
 
 		// ------------------------------------------------------------------------------  <gets / sets> -------------------------------------------------------------------------------
+		int getXPosition() const { return _xPosition; }
+		void setXPosition(int val) { _xPosition = val; }
+		int getYPosition() const { return _yPosition; }
+		void setYPosition(int val) { _yPosition = val; }
 		MatrixTransform* getPieceMatrixTransform() const { return _pieceMatrixTransform; }
 		void setPieceMatrixTransform(MatrixTransform* val) { _pieceMatrixTransform = val; }
 		// ------------------------------------------------------------------------------  </gets / sets> ------------------------------------------------------------------------------
@@ -53,8 +56,8 @@ class ChessPiece {
 	private:
 		ChessPieceType _chessPieceType;
 		ChessPieceColor _chessPieceColor;
-		int _xPosition;
-		int _yPosition;
+		int _xPosition;		
+		int _yPosition;		
 		bool _piecePlayable;
 		MatrixTransform* _pieceMatrixTransform;
 };

@@ -49,7 +49,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>osgART_debug.lib;osgd.lib;osgDBd.lib;osgGAd.lib;osgFXd.lib;osgShadowd.lib;osgViewerd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>osgART_debug.lib;osgd.lib;osgDBd.lib;osgGAd.lib;osgFXd.lib;osgSimd.lib;osgShadowd.lib;osgViewerd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>C:\Program Files (x86)\osgART\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
@@ -69,7 +69,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>C:\Program Files (x86)\osgART\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>osgART_debug.lib;osgd.lib;osgDBd.lib;osgGAd.lib;osgViewerd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>osgART_debug.lib;osgd.lib;osgDBd.lib;osgGAd.lib;osgFXd.lib;osgSimd.lib;osgShadowd.lib;osgViewerd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

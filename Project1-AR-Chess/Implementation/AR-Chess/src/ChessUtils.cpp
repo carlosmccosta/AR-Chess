@@ -1,6 +1,30 @@
 #include "ChessUtils.h"
 
 
+Vec3f ChessUtils::computePieceScenePosition(int xPosition, int yPosition) {
+	float shiftX = xPosition * BOARD_SQUARE_SIZE;
+	float shiftY = yPosition * BOARD_SQUARE_SIZE;
+	float shiftZ = PIECE_HEIGHT_OFFSET;
+
+	// adjust position to middle of square
+	double halfSquareSize = BOARD_SQUARE_SIZE / 2.0;
+	if (shiftX < 0) {
+		shiftX += halfSquareSize;
+	}
+	else {
+		shiftX -= halfSquareSize;
+	}
+
+	if (shiftY < 0) {
+		shiftY += halfSquareSize;
+	}
+	else {
+		shiftY -= halfSquareSize;
+	}
+
+	return Vec3f(shiftX, shiftY, shiftZ);
+}
+
 
 MatrixTransform* ChessUtils::loadOSGModel(string name, float modelSize, Material* material, bool overrideMaterial,
 	Vec3 modelCenterShift, double rotationAngle, Vec3 rotationAxis,
@@ -86,6 +110,61 @@ Material* ChessUtils::createMaterial(float shininess, Vec4 emission, Vec4 specul
 	material->setAmbient(Material::FRONT, ambient);
 	
 	return material;
+}
+
+
+Geode* ChessUtils::createRectangleWithTexture(Vec3 centerPosition, Image* image, int width, int height, Vec4 color) {
+	int halfWidth = width / 2;
+	int halfHeight = height / 2;
+
+	Vec3Array* vertices = new Vec3Array();	
+	vertices->push_back(Vec3(centerPosition.x() - halfWidth, centerPosition.y() - halfHeight, centerPosition.z()));
+	vertices->push_back(Vec3(centerPosition.x() + halfWidth, centerPosition.y() - halfHeight, centerPosition.z()));
+	vertices->push_back(Vec3(centerPosition.x() + halfWidth, centerPosition.y() + halfHeight, centerPosition.z()));
+	vertices->push_back(Vec3(centerPosition.x() - halfWidth, centerPosition.y() + halfHeight, centerPosition.z()));
+
+	Vec3Array* normals = new Vec3Array();
+	normals->push_back(Vec3(0.0f, 0.0f, 1.0f));
+
+	Vec2Array* texcoords = new Vec2Array();
+	texcoords->push_back(Vec2(0.0f, 0.0f));
+	texcoords->push_back(Vec2(1.0f, 0.0f));
+	texcoords->push_back(Vec2(1.0f, 1.0f));
+	texcoords->push_back(Vec2(0.0f, 1.0f));
+
+	osg::ref_ptr<osg::Vec4Array> colors = new osg::Vec4Array;
+	colors->push_back(color);
+
+	Geometry* quad = new Geometry();
+	quad->setVertexArray(vertices);
+	quad->setNormalArray(normals);
+	quad->setNormalBinding(osg::Geometry::BIND_OVERALL);	
+	quad->setColorArray(colors);
+	quad->setColorBinding(osg::Geometry::BIND_OVERALL);
+	quad->setTexCoordArray(0, texcoords);
+	quad->addPrimitiveSet(new osg::DrawArrays(GL_QUADS, 0, 4));
+
+	Texture2D* texture = new Texture2D();
+	if (image != NULL) {
+		texture->setImage(image);
+	}			
+
+	Geode* geode = new Geode();
+	geode->addDrawable(quad);
+
+	osg::BlendFunc* blendFunc = new osg::BlendFunc();
+	blendFunc->setFunction(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	osg::TexEnv* blendTexEnv = new osg::TexEnv();
+	blendTexEnv->setMode(osg::TexEnv::BLEND);
+
+	osg::StateSet* geodeStateset = geode->getOrCreateStateSet();
+	geodeStateset->setAttributeAndModes(blendFunc);
+	geodeStateset->setTextureAttribute(0, blendTexEnv);
+	geodeStateset->setTextureAttributeAndModes(0, texture);
+	geodeStateset->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
+	
+	return geode;
 }
 
 

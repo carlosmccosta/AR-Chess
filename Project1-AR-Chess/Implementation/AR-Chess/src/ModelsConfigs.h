@@ -37,6 +37,10 @@
 #define PIECE_BLACK_BISHOP "models/bishop_black.ive"
 #define PIECE_BLACK_PAWN "models/pawn_black.ive"
 
+#define PADDLE_OVERLAYS_HEIGHT_OFFSET 0.01
+#define PADDLE_SELECTOR "images/blue_circle.png"
+#define PADDLE_SELECTED "images/blue_and_orange_circle.png"
+
 #define RECEIVE_SHADOW_MASK 0x1
 #define CAST_SHADOW_MASK 0x2
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  </constants definitions> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

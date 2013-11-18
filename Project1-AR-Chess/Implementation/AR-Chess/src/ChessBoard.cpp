@@ -2,6 +2,9 @@
 
 
 ChessBoard::ChessBoard() {
+	_paddleSelectorImage = osgDB::readImageFile(PADDLE_SELECTOR);
+	_paddleSelectedImage = osgDB::readImageFile(PADDLE_SELECTED);
+
 	// materials setup
 	float boardShininess = 128.0;
 	Vec4 boardEmission = Vec4(0.0f, 0.0f, 0.0f, 0.0f);
@@ -38,13 +41,19 @@ ChessBoard::ChessBoard() {
 
 	_boardShadowedScene = new osgShadow::ShadowedScene();
 	_boardShadowedScene->setReceivesShadowTraversalMask(RECEIVE_SHADOW_MASK);
-	_boardShadowedScene->setCastsShadowTraversalMask(CAST_SHADOW_MASK);	
+	_boardShadowedScene->setCastsShadowTraversalMask(CAST_SHADOW_MASK);
+
+	osg::TexEnv* blendTexEnv = new osg::TexEnv();
+	blendTexEnv->setMode(osg::TexEnv::BLEND);
+	_boardShadowedScene->getOrCreateStateSet()->setTextureAttribute(0, blendTexEnv);
 
 	MatrixTransform* boardModelMT = ChessUtils::loadOSGModel(BOARD_MODEL, BOARD_SIZE, _boardMaterial, false, modelCenterShift, rotationAngle, rotationAxis,
 		xModelCenterOffsetPercentage, yModelCenterOffsetPercentage, zModelCenterOffsetPercentage);
 	boardModelMT->setNodeMask(RECEIVE_SHADOW_MASK);
 
+	_overlays = new Group();
 	_boardShadowedScene->addChild(boardModelMT);	
+	_boardShadowedScene->addChild(_overlays);
 }
 
 ChessBoard::~ChessBoard() {}
@@ -99,8 +108,75 @@ osgShadow::ShadowedScene* ChessBoard::setupBoard() {
 
 	for (size_t blackPiecePos = 0; blackPiecePos < _blackChessPieces.size(); ++blackPiecePos) {
 		_boardShadowedScene->addChild(_blackChessPieces[blackPiecePos].getPieceMatrixTransform());
-	}	
+	}
+
+	hightLighPosition(-1, -1);
+	hightLighPosition(-1, -4);
+	hightLighPosition(-1, -3);
+	selectPosition(1, 1, WHITE);
+	selectPosition(1, -3, WHITE);
+	selectPosition(1, -4, WHITE);
 
 	return _boardShadowedScene;
+}
+
+
+bool ChessBoard::selectPosition(int xBoardPosition, int yBoardPosition, ChessPieceColor chessPieceType) {
+	if (!isPositionValid(xBoardPosition) || !isPositionValid(yBoardPosition)) {
+		return false;
+	}
+
+	if (isBoardSquareWithPiece(xBoardPosition, yBoardPosition, chessPieceType)) {		
+		Vec3f scenePosition = ChessUtils::computePieceScenePosition(xBoardPosition, yBoardPosition);		
+		scenePosition.z() = PADDLE_OVERLAYS_HEIGHT_OFFSET;
+		_overlays->addChild(ChessUtils::createRectangleWithTexture(scenePosition, _paddleSelectedImage));
+
+		return true;
+	}
+
+	return false;	
+}
+
+
+bool ChessBoard::hightLighPosition(int xBoardPosition, int yBoardPosition) {
+	if (!isPositionValid(xBoardPosition) || !isPositionValid(yBoardPosition)) {
+		return false;
+	}
+
+	Vec3f scenePosition = ChessUtils::computePieceScenePosition(xBoardPosition, yBoardPosition);
+	scenePosition.z() = PADDLE_OVERLAYS_HEIGHT_OFFSET;
+	_overlays->addChild(ChessUtils::createRectangleWithTexture(scenePosition, _paddleSelectorImage));
+	return true;
+}
+
+
+bool ChessBoard::isBoardSquareWithPiece(int xBoardPosition, int yBoardPosition, ChessPieceColor chessPieceType) {
+	return true;
+
+	if (!isPositionValid(xBoardPosition) || !isPositionValid(yBoardPosition)) {
+		return false;
+	}
+	
+	vector<ChessPiece>& piecesToCheck = _blackChessPieces;
+	if (chessPieceType == WHITE) {
+		piecesToCheck = _whiteChessPieces;
+	}
+
+	for (size_t i = 0; i < piecesToCheck.size(); ++i) {
+		if (piecesToCheck[i].getXPosition() == xBoardPosition && piecesToCheck[i].getYPosition() == yBoardPosition) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+
+bool ChessBoard::isPositionValid(int position) {
+	if ((position > -5 && position < 0) || (position > 0 && position < 5)) {
+		return true;
+	} else {
+		return false;
+	}
 }
 

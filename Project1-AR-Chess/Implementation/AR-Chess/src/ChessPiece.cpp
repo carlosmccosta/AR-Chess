@@ -11,7 +11,7 @@ ChessPiece::ChessPiece(ChessPieceType chessPieceType, ChessPieceColor chessPiece
 	// necessary parameters to position piece in board
 	string name = getPieceModelPath(chessPieceType, chessPieceColor);
 	float modelSize = getPieceModelSize(chessPieceType);
-	Vec3f pieceScenePosition = computePieceScenePosition(xPosition, yPosition);
+	Vec3f pieceScenePosition = ChessUtils::computePieceScenePosition(xPosition, yPosition);
 	double rotationAngle = 0;
 	Vec3f rotationAxis = Vec3f(0.0, 0.0, 1.0);
 	
@@ -112,29 +112,6 @@ float ChessPiece::getPieceModelSize(ChessPieceType chessPieceType) {
 	}
 
 	return pieceModelSize;
-}
-
-
-Vec3f ChessPiece::computePieceScenePosition(int xPosition, int yPosition) {
-	float shiftX = xPosition * BOARD_SQUARE_SIZE;
-	float shiftY = yPosition * BOARD_SQUARE_SIZE;
-	float shiftZ = PIECE_HEIGHT_OFFSET;
-
-	// adjust position to middle of square
-	double halfSquareSize = BOARD_SQUARE_SIZE / 2.0;
-	if (shiftX < 0) {
-		shiftX += halfSquareSize;
-	} else {
-		shiftX -= halfSquareSize;
-	}
-
-	if (shiftY < 0) {
-		shiftY += halfSquareSize;
-	} else {
-		shiftY -= halfSquareSize;
-	}
-
-	return Vec3f(shiftX, shiftY, shiftZ);
 }
 
 

@@ -168,6 +168,7 @@ osgd.lib
 osgDBd.lib
 osgGAd.lib
 osgFXd.lib
+osgSimd.lib
 osgShadowd.lib
 osgViewerd.lib
 

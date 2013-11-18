@@ -127,5 +127,10 @@ void ChessScene::setupLights() {
 	_lightGroup->addChild(ChessUtils::createLightSource(stateSet, 2, Vec4(-supportLightsOffset, supportLightsOffset, supportLightsHeight, 1.0), Vec3(supportLightsOffset, -supportLightsOffset, -supportLightsHeight)));
 	_lightGroup->addChild(ChessUtils::createLightSource(stateSet, 3, Vec4(supportLightsOffset, supportLightsOffset, supportLightsHeight, 1.0), Vec3(-supportLightsOffset, -supportLightsOffset, -supportLightsHeight)));
 	_lightGroup->addChild(ChessUtils::createLightSource(stateSet, 4, Vec4(supportLightsOffset, -supportLightsOffset, supportLightsHeight, 1.0), Vec3(-supportLightsOffset, supportLightsOffset, -supportLightsHeight)));
+	/*_lightGroup->addChild(ChessUtils::createLightSource(stateSet, 1, Vec4(-supportLightsOffset, 0, supportLightsHeight, 1.0), Vec3(supportLightsOffset, 0, -supportLightsHeight)));
+	_lightGroup->addChild(ChessUtils::createLightSource(stateSet, 2, Vec4(0, supportLightsOffset, supportLightsHeight, 1.0), Vec3(0, -supportLightsOffset, -supportLightsHeight)));
+	_lightGroup->addChild(ChessUtils::createLightSource(stateSet, 3, Vec4(supportLightsOffset, 0, supportLightsHeight, 1.0), Vec3(-supportLightsOffset, 0, -supportLightsHeight)));
+	_lightGroup->addChild(ChessUtils::createLightSource(stateSet, 4, Vec4(0, -supportLightsOffset, supportLightsHeight, 1.0), Vec3(0, supportLightsOffset, -supportLightsHeight)));*/
+
 	_boardTrackerMT->addChild(_lightGroup);		
 }

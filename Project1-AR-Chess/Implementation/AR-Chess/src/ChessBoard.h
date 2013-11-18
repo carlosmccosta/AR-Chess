@@ -3,6 +3,10 @@
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  <includes> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 // OSG includes
 #include <osg/MatrixTransform>
+#include <osg/Image>
+#include <osg/TexEnv>
+#include <osgDB/ReadFile>
+#include <osgSim/MultiSwitch>
 #include <osgShadow/ShadowedScene>
 #include <osgShadow/ShadowMap>
 #include <osgShadow/ViewDependentShadowMap>
@@ -17,9 +21,11 @@
 
 
 // namespace specific imports to avoid namespace pollution
+using std::vector;
 using osg::MatrixTransform;
 using osg::Vec3f;
-using std::vector;
+using osg::Image;
+using osgSim::MultiSwitch;
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  </includes> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
@@ -29,6 +35,10 @@ class ChessBoard {
 		ChessBoard();
 		virtual ~ChessBoard();
 		osgShadow::ShadowedScene* setupBoard();
+		bool selectPosition(int xBoardPosition, int yBoardPosition, ChessPieceColor chessPieceType);
+		bool hightLighPosition(int xBoardPosition, int yBoardPosition);
+		bool isBoardSquareWithPiece(int xBoardPosition, int yBoardPosition, ChessPieceColor chessPieceType);
+		bool isPositionValid(int position);
 
 	private:
 		vector<ChessPiece> _whiteChessPieces;
@@ -37,5 +47,8 @@ class ChessBoard {
 		Material* _boardMaterial;
 		Material* _whitePiecesMaterial;
 		Material* _blackPiecesMaterial;
+		Image* _paddleSelectorImage;
+		Image* _paddleSelectedImage;
+		Group* _overlays;
 };
 
