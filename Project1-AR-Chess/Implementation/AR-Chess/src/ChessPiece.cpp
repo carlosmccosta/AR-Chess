@@ -24,7 +24,7 @@ ChessPiece::ChessPiece(ChessPieceType chessPieceType, ChessPieceColor chessPiece
 		rotationAngle = osg::PI;
 	}
 
-	_pieceMatrixTransform = ChessUtils::loadOSGModel(name, modelSize, material, pieceScenePosition, rotationAngle, rotationAxis);
+	_pieceMatrixTransform = ChessUtils::loadOSGModel(name, modelSize, material, false, pieceScenePosition, rotationAngle, rotationAxis);
 	_pieceMatrixTransform->setNodeMask(CAST_SHADOW_MASK);
 }
 

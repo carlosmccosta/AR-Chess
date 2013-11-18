@@ -3,6 +3,9 @@
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  <includes> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 // OSG includes
 #include <osg/MatrixTransform>
+#include <osgShadow/ShadowedScene>
+#include <osgShadow/ShadowMap>
+#include <osgShadow/ViewDependentShadowMap>
 
 // std includes
 #include <vector>
@@ -25,12 +28,12 @@ class ChessBoard {
 	public:
 		ChessBoard();
 		virtual ~ChessBoard();
-		MatrixTransform* setupBoard();		
+		osgShadow::ShadowedScene* setupBoard();
 
 	private:
 		vector<ChessPiece> _whiteChessPieces;
 		vector<ChessPiece> _blackChessPieces;
-		MatrixTransform* _boardMatrixTransform;
+		osgShadow::ShadowedScene* _boardShadowedScene;
 		Material* _boardMaterial;
 		Material* _whitePiecesMaterial;
 		Material* _blackPiecesMaterial;

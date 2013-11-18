@@ -1,10 +1,6 @@
 #include "ChessScene.h"
 
 ChessScene::ChessScene() {
-	_rootNode = new osgShadow::ShadowedScene();
-	_rootNode->setReceivesShadowTraversalMask(RECEIVE_SHADOW_MASK);
-	_rootNode->setCastsShadowTraversalMask(CAST_SHADOW_MASK);
-
 	_boardScene = new osgART::Scene();
 	_lightGroup = new Group();
 }
@@ -32,7 +28,7 @@ void ChessScene::setupScene() {
 	setupSelector();
 
 	//BOOTSTRAP INIT
-	_viewer.setSceneData(_rootNode);
+	_viewer.setSceneData(_boardScene);
 	
 	// MAIN LOOP & EXIT CLEANUP
 	_viewer.run();
@@ -74,7 +70,14 @@ void ChessScene::setupARTrackers() {
 
 
 void ChessScene::setupBoard() {
-	MatrixTransform* boardMT = _gameBoard.setupBoard();	
+	osgShadow::ShadowedScene* boardShadowedScene = _gameBoard.setupBoard();
+	
+	osgShadow::ShadowMap* shadowMap = new osgShadow::ShadowMap();
+	int textureMapResolution = 1024 * 10;
+	shadowMap->setTextureSize(osg::Vec2s(textureMapResolution, textureMapResolution));
+	//shadowMap->setTextureUnit(1);
+	shadowMap->setLight(_mainLightSource->getLight());
+	boardShadowedScene->setShadowTechnique(shadowMap);
 
 	/*_specularHighlights = new osgFX::SpecularHighlights();
 	_specularHighlights->setTextureUnit(0);
@@ -88,7 +91,7 @@ void ChessScene::setupBoard() {
 	_anisotropicLighting->setLightingMap(new osg::Image());
 	_anisotropicLighting->addChild(boardMT);*/
 
-	_boardTrackerMT->addChild(boardMT);
+	_boardTrackerMT->addChild(boardShadowedScene);
 }
 
 
@@ -100,7 +103,7 @@ void ChessScene::setupLights() {
 	StateSet* stateSet = _boardTrackerMT->getOrCreateStateSet();
 	//stateSet->setMode(GL_LIGHT0, osg::StateAttribute::ON);
 	
-	_mainLightSource = ChessUtils::createLightSource(stateSet, 0, Vec4(30, 0, 25, 1.0), Vec3(0, 0, -1));
+	_mainLightSource = ChessUtils::createLightSource(stateSet, 0, Vec4(0, 0, BOARD_SIZE * 0.8, 1.0), Vec3(0, 0, -1));
 
 	/*osg::Geode* geode = new osg::Geode();
 	osg::ShapeDrawable* sd = new osg::ShapeDrawable(new osg::Sphere(osg::Vec3(0, 0, 10), 10));
@@ -116,15 +119,5 @@ void ChessScene::setupLights() {
 	_lightGroup->addChild(ChessUtils::createLightSource(stateSet, 2, Vec4(-supportLightsOffset, supportLightsOffset, supportLightsHeight, 1.0), Vec3(supportLightsOffset, -supportLightsOffset, -supportLightsHeight)));
 	_lightGroup->addChild(ChessUtils::createLightSource(stateSet, 3, Vec4(supportLightsOffset, supportLightsOffset, supportLightsHeight, 1.0), Vec3(-supportLightsOffset, -supportLightsOffset, -supportLightsHeight)));
 	_lightGroup->addChild(ChessUtils::createLightSource(stateSet, 4, Vec4(supportLightsOffset, -supportLightsOffset, supportLightsHeight, 1.0), Vec3(-supportLightsOffset, supportLightsOffset, -supportLightsHeight)));
-	_boardTrackerMT->addChild(_lightGroup);	
-
-	_rootNode->addChild(_boardScene);
-
-	osgShadow::ShadowMap* shadowMap = new osgShadow::ShadowMap();
-	shadowMap->setLight(_mainLightSource->getLight());
-	shadowMap->setTextureSize(osg::Vec2s(1024, 1024));
-	shadowMap->setTextureUnit(1);
-
-	//osgShadow::ViewDependentShadowMap* shadowMap = new osgShadow::ViewDependentShadowMap();	
-	_rootNode->setShadowTechnique(shadowMap);	
+	_boardTrackerMT->addChild(_lightGroup);		
 }

@@ -26,7 +26,7 @@ using osg::Material;
 
 
 namespace ChessUtils {
-	MatrixTransform* loadOSGModel(string name, float modelSize, Material* material = NULL,
+	MatrixTransform* loadOSGModel(string name, float modelSize, Material* material = NULL, bool overrideMaterial = false,
 		Vec3 modelCenterShift = Vec3(0.0, 0.0, 0.0),
 		double rotationAngle = 0, Vec3 rotationAxis = Vec3(0.0, 0.0, 1.0),
 		float xModelCenterOffsetPercentage = 0, float yModelCenterOffsetPercentage = 0, float zModelCenterOffsetPercentage = 0.5);
@@ -35,11 +35,11 @@ namespace ChessUtils {
 		int lightNumber = 1,
 		Vec4 position = Vec4(0.0f, 0.0f, 50.0f, 1.0f),
 		Vec3 direction = Vec3(0.0, 0.0, -1.0),
-		Vec4 ambientLight = Vec4(0.1f, 0.1f, 0.1f, 0.1f),
+		Vec4 ambientLight = Vec4(0.0f, 0.0f, 0.0f, 0.0f),
 		Vec4 diffuseLight = Vec4(0.2f, 0.2f, 0.2f, 0.2f),
-		Vec4 specularLight = Vec4(0.7f, 0.7f, 0.7f, 0.7f),
+		Vec4 specularLight = Vec4(1.0f, 1.0f, 1.0f, 1.0f),
 		float constanteAttenuation = 1.0f,		
-		float spotCutoff = 100, float spotExponent = 128);
+		float spotCutoff = 180, float spotExponent = 128);
 
 
 	Material* createMaterial(float shininess = 128.0,

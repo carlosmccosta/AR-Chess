@@ -3,27 +3,27 @@
 
 ChessBoard::ChessBoard() {
 	// materials setup
-	float boardShininess = 64.0;
+	float boardShininess = 32.0;
 	Vec4 boardEmission = Vec4(0.0f, 0.0f, 0.0f, 0.0f);
 	Vec4 boardSpecular = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	Vec4 boardDiffuse = Vec4(0.4f, 0.4f, 0.4f, 0.5f);
-	Vec4 boardAmbient = Vec4(0.1f, 0.1f, 0.1f, 0.5f);
+	Vec4 boardDiffuse = Vec4(0.2f, 0.2f, 0.2f, 0.5f);
+	Vec4 boardAmbient = Vec4(0.05f, 0.05f, 0.05f, 0.05f);
 	_boardMaterial = ChessUtils::createMaterial(boardShininess, boardEmission, boardSpecular, boardDiffuse, boardAmbient);
 	//_boardMaterial = NULL;
 
-	float whitePieceShininess = 32.0;
+	float whitePieceShininess = 64.0;
 	Vec4 whitePieceEmission = Vec4(0.0f, 0.0f, 0.0f, 0.0f);
 	Vec4 whitePieceSpecular = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	Vec4 whitePieceDiffuse = Vec4(0.4f, 0.4f, 0.4f, 0.5f);
-	Vec4 whitePieceAmbient = Vec4(0.1f, 0.1f, 0.1f, 0.5f);
+	Vec4 whitePieceDiffuse = Vec4(1.0f, 1.0f, 1.0f, 0.5f);
+	Vec4 whitePieceAmbient = Vec4(0.05f, 0.05f, 0.05f, 0.05f);
 	_whitePiecesMaterial = ChessUtils::createMaterial(whitePieceShininess, whitePieceEmission, whitePieceSpecular, whitePieceDiffuse, whitePieceAmbient);
 	//_whitePiecesMaterial = NULL;
 
-	float blackPieceShininess = 32.0;
+	float blackPieceShininess = 128.0;
 	Vec4 blackPieceEmission = Vec4(0.0f, 0.0f, 0.0f, 0.0f);
 	Vec4 blackPieceSpecular = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	Vec4 blackPieceDiffuse = Vec4(0.4f, 0.4f, 0.4f, 0.5f);
-	Vec4 blackPieceAmbient = Vec4(0.1f, 0.1f, 0.1f, 0.5f);
+	Vec4 blackPieceDiffuse = Vec4(0.0f, 0.0f, 0.0f, 0.8f);
+	Vec4 blackPieceAmbient = Vec4(0.05f, 0.05f, 0.05f, 0.05f);
 	_blackPiecesMaterial = ChessUtils::createMaterial(blackPieceShininess, blackPieceEmission, blackPieceSpecular, blackPieceDiffuse, blackPieceAmbient);
 	//_blackPiecesMaterial = NULL;
 
@@ -35,14 +35,22 @@ ChessBoard::ChessBoard() {
 	float xModelCenterOffsetPercentage = 0; 
 	float yModelCenterOffsetPercentage = 0; 
 	float zModelCenterOffsetPercentage = -0.5;
-	_boardMatrixTransform = ChessUtils::loadOSGModel(BOARD_MODEL, BOARD_SIZE, _boardMaterial, modelCenterShift, rotationAngle, rotationAxis,
+
+	_boardShadowedScene = new osgShadow::ShadowedScene();
+	_boardShadowedScene->setReceivesShadowTraversalMask(RECEIVE_SHADOW_MASK);
+	_boardShadowedScene->setCastsShadowTraversalMask(CAST_SHADOW_MASK);	
+
+	MatrixTransform* boardModelMT = ChessUtils::loadOSGModel(BOARD_MODEL, BOARD_SIZE, _boardMaterial, false, modelCenterShift, rotationAngle, rotationAxis,
 		xModelCenterOffsetPercentage, yModelCenterOffsetPercentage, zModelCenterOffsetPercentage);
+	boardModelMT->setNodeMask(RECEIVE_SHADOW_MASK);
+
+	_boardShadowedScene->addChild(boardModelMT);	
 }
 
 ChessBoard::~ChessBoard() {}
 
 
-MatrixTransform* ChessBoard::setupBoard() {
+osgShadow::ShadowedScene* ChessBoard::setupBoard() {
 	// reset board
 	_whiteChessPieces.clear();
 	_blackChessPieces.clear();
@@ -86,15 +94,13 @@ MatrixTransform* ChessBoard::setupBoard() {
 
 	// add pieces to the board
 	for (size_t whitePiecePos = 0; whitePiecePos < _whiteChessPieces.size(); ++whitePiecePos) {
-		_boardMatrixTransform->addChild(_whiteChessPieces[whitePiecePos].getPieceMatrixTransform());
+		_boardShadowedScene->addChild(_whiteChessPieces[whitePiecePos].getPieceMatrixTransform());
 	}
 
 	for (size_t blackPiecePos = 0; blackPiecePos < _blackChessPieces.size(); ++blackPiecePos) {
-		_boardMatrixTransform->addChild(_blackChessPieces[blackPiecePos].getPieceMatrixTransform());
-	}
+		_boardShadowedScene->addChild(_blackChessPieces[blackPiecePos].getPieceMatrixTransform());
+	}	
 
-	_boardMatrixTransform->setNodeMask(RECEIVE_SHADOW_MASK);
-
-	return _boardMatrixTransform;
+	return _boardShadowedScene;
 }
 

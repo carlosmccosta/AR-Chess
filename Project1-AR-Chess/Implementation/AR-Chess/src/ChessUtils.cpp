@@ -2,7 +2,7 @@
 
 
 
-MatrixTransform* ChessUtils::loadOSGModel(string name, float modelSize, Material* material,
+MatrixTransform* ChessUtils::loadOSGModel(string name, float modelSize, Material* material, bool overrideMaterial,
 	Vec3 modelCenterShift, double rotationAngle, Vec3 rotationAxis,
 	float xModelCenterOffsetPercentage, float yModelCenterOffsetPercentage, float zModelCenterOffsetPercentage) {
 	// create a new node by reading in model from file
@@ -10,7 +10,11 @@ MatrixTransform* ChessUtils::loadOSGModel(string name, float modelSize, Material
 	if (modelNode != NULL) {
 		// apply material
 		if (material != NULL) {
-			modelNode->getOrCreateStateSet()->setAttribute(material);
+			if (overrideMaterial) {
+				modelNode->getOrCreateStateSet()->setAttributeAndModes(material, osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
+			} else {
+				modelNode->getOrCreateStateSet()->setAttributeAndModes(material, osg::StateAttribute::ON);
+			}
 		}
 
 		//put model in origin			
@@ -72,11 +76,12 @@ LightSource* ChessUtils::createLightSource(StateSet* stateSet, int lightNumber, 
 
 Material* ChessUtils::createMaterial(float shininess, Vec4 emission, Vec4 specular, Vec4 diffuse, Vec4 ambient) {
 	Material* material = new Material();
+	material->setColorMode(Material::DIFFUSE);
 	material->setShininess(Material::FRONT, shininess);
 	material->setEmission(Material::FRONT, emission);
 	material->setSpecular(Material::FRONT, specular);
-	material->setAmbient(Material::FRONT, ambient);
 	material->setDiffuse(Material::FRONT, diffuse);
+	material->setAmbient(Material::FRONT, ambient);
 	
 	return material;
 }

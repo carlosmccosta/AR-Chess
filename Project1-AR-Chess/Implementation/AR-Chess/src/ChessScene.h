@@ -6,9 +6,6 @@
 #include <osg/MatrixTransform>
 #include <osg/ShapeDrawable>
 #include <osgViewer/Viewer>
-#include <osgShadow/ShadowedScene>
-#include <osgShadow/ShadowMap>
-#include <osgShadow/ViewDependentShadowMap>
 #include <osgViewer/ViewerEventHandlers>
 #include <osgGA/TrackballManipulator>
 #include <osgFX/SpecularHighlights>
@@ -53,8 +50,7 @@ class ChessScene {
 		void setupLights();		
 		
 	private:		
-		osgViewer::Viewer _viewer;
-		osgShadow::ShadowedScene* _rootNode;
+		osgViewer::Viewer _viewer;		
 		Group* _lightGroup;
 		LightSource* _mainLightSource;
 		osgART::Scene* _boardScene;
