@@ -1,9 +1,9 @@
 #include "ChessUtils.h"
 
 
-Vec3f ChessUtils::computePieceScenePosition(int xPosition, int yPosition) {
-	float shiftX = xPosition * BOARD_SQUARE_SIZE;
-	float shiftY = yPosition * BOARD_SQUARE_SIZE;
+Vec3f ChessUtils::computePieceScenePosition(int boardXPosition, int boardYPosition) {
+	float shiftX = boardXPosition * BOARD_SQUARE_SIZE;
+	float shiftY = boardYPosition * BOARD_SQUARE_SIZE;
 	float shiftZ = PIECE_HEIGHT_OFFSET;
 
 	// adjust position to middle of square
@@ -23,6 +23,36 @@ Vec3f ChessUtils::computePieceScenePosition(int xPosition, int yPosition) {
 	}
 
 	return Vec3f(shiftX, shiftY, shiftZ);
+}
+
+
+Vec3i ChessUtils::computePieceBoardPosition(Vec3 scenePosition) {
+	Vec3i boardPosition;
+	boardPosition.x() = scenePosition.x() / BOARD_SQUARE_SIZE;
+	boardPosition.y() = scenePosition.y() / BOARD_SQUARE_SIZE;
+	boardPosition.z() = scenePosition.z() / BOARD_SQUARE_SIZE;
+
+	if (scenePosition.x() < 0) {
+		--boardPosition.x();
+	} else {
+		++boardPosition.x();
+	}
+
+	if (scenePosition.y() < 0) {
+		--boardPosition.y();
+	}
+	else {
+		++boardPosition.y();
+	}
+
+	if (scenePosition.z() < 0) {
+		--boardPosition.z();
+	}
+	else {
+		++boardPosition.z();
+	}
+
+	return boardPosition;
 }
 
 

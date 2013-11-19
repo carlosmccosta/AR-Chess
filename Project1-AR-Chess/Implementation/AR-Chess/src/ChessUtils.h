@@ -21,6 +21,7 @@
 using std::string;
 using osg::Vec2;
 using osg::Vec3;
+using osg::Vec3i;
 using osg::Vec3f;
 using osg::Vec4;
 using osg::Vec2Array;
@@ -41,7 +42,8 @@ using osg::Material;
 
 
 namespace ChessUtils {
-	Vec3f computePieceScenePosition(int xPosition, int yPosition);
+	Vec3f computePieceScenePosition(int boardXPosition, int boardYPosition);
+	Vec3i computePieceBoardPosition(Vec3 scenePosition);
 
 	MatrixTransform* loadOSGModel(string name, float modelSize, Material* material = NULL, bool overrideMaterial = false,
 		Vec3 modelCenterShift = Vec3(0.0, 0.0, 0.0),

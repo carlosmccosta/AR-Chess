@@ -5,6 +5,7 @@
 // OSG includes
 #include <osg/MatrixTransform>
 #include <osg/ShapeDrawable>
+#include <osg/Referenced>
 #include <osg/LightModel>
 #include <osgViewer/Viewer>
 #include <osgViewer/ViewerEventHandlers>
@@ -27,6 +28,7 @@
 using std::string;
 using osg::Group;
 using osg::Node;
+using osg::Vec3;
 using osg::Vec3f;
 using osg::MatrixTransform;
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  </includes> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -34,7 +36,7 @@ using osg::MatrixTransform;
 
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  <ChessScene> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-class ChessScene {
+class ChessScene : public osg::Referenced {
 	public:
 		ChessScene();
 		virtual ~ChessScene();
@@ -48,7 +50,9 @@ class ChessScene {
 
 		void setupBoard();		
 		void setupSelector();
-		void setupLights();		
+		void setupLights();
+
+		void updateScene();
 		
 	private:		
 		osgViewer::Viewer _viewer;		
@@ -60,5 +64,11 @@ class ChessScene {
 		MatrixTransform* _boardTrackerMT;
 		MatrixTransform* _selectorTrackerMT;
 		ChessBoard _gameBoard;
+};
+
+
+class ChessSceneNodeCallback : public osg::NodeCallback {
+	public:
+		virtual void operator()(osg::Node* node, osg::NodeVisitor* nodeVisitor);
 };
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  </ChessScene> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

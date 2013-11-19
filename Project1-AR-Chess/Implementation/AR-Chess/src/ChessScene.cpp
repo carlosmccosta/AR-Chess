@@ -28,6 +28,9 @@ void ChessScene::setupScene() {
 	setupSelector();
 
 	//BOOTSTRAP INIT
+	_boardScene->setDataVariance(osg::Object::DYNAMIC);
+	_boardScene->setUserData(this);
+	_boardScene->setUpdateCallback(new ChessSceneNodeCallback());
 	_viewer.setSceneData(_boardScene);
 	
 	// MAIN LOOP & EXIT CLEANUP
@@ -133,4 +136,28 @@ void ChessScene::setupLights() {
 	_lightGroup->addChild(ChessUtils::createLightSource(stateSet, 4, Vec4(0, -supportLightsOffset, supportLightsHeight, 1.0), Vec3(0, supportLightsOffset, -supportLightsHeight)));*/
 
 	_boardTrackerMT->addChild(_lightGroup);		
+}
+
+
+void ChessScene::updateScene() {
+	Vec3 boardScenePosition = _boardTrackerMT->getMatrix().getTrans();
+	Vec3 selectorScenePosition = _selectorTrackerMT->getMatrix().getTrans();	
+
+	// only update if board and selector are visible
+	/*if (boardScenePosition.x() != 0 && boardScenePosition.y() != 0 && boardScenePosition.z() != 0 &&
+		selectorScenePosition.x() != 0 && selectorScenePosition.y() != 0 && selectorScenePosition.z() != 0) {*/
+		Vec3 offset = selectorScenePosition - boardScenePosition;
+		Vec3i selectorBoardPosition = ChessUtils::computePieceBoardPosition(offset);
+		_gameBoard.updateBoard(selectorBoardPosition);
+	/*} else {
+		_gameBoard.clearHighlights();
+	}*/
+}
+
+
+void ChessSceneNodeCallback::operator()(osg::Node* node, osg::NodeVisitor* nodeVisitor) {
+	ChessScene* chessScene = dynamic_cast<ChessScene*> (node->getUserData());
+	chessScene->updateScene();
+
+	traverse(node, nodeVisitor);
 }

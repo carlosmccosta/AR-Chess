@@ -2,7 +2,8 @@
 
 
 int main(int argc, char* argv[]) {	
-	ChessScene scene;
-	scene.startGame();
-	scene.endGame();
+	// ChessScene smart pointer to control game flow
+	ChessScene* scene = new ChessScene();
+	scene->startGame();
+	scene->endGame();
 }
