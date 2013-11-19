@@ -67,6 +67,6 @@ namespace ChessUtils {
 		Vec4 diffuse = Vec4(0.4f, 0.4f, 0.4f, 1.0f),
 		Vec4 ambient = Vec4(0.1f, 0.1f, 0.1f, 1.0f));
 
-	Geode* createRectangleWithTexture(Vec3 centerPosition = Vec3(0, 0, 0), Image* image = NULL, int width = BOARD_SQUARE_SIZE, int height = BOARD_SQUARE_SIZE, Vec4 color = Vec4(1.0f, 1.0f, 1.0f, 0.9f));
+	Geode* createRectangleWithTexture(Vec3 centerPosition = Vec3(0, 0, 0), Image* image = NULL, int width = BOARD_SQUARE_SIZE, int height = BOARD_SQUARE_SIZE, Vec4 color = Vec4(1.0f, 1.0f, 1.0f, 1.0f));
 };
 

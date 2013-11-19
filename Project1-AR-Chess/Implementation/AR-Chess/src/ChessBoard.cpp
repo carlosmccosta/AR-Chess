@@ -53,8 +53,12 @@ ChessBoard::ChessBoard() {
 	boardModelMT->setNodeMask(RECEIVE_SHADOW_MASK);
 
 	_boardSquareHighlights = new Group();
+	_boardSquareSelections = new Group();
 	_boardShadowedScene->addChild(boardModelMT);	
 	_boardShadowedScene->addChild(_boardSquareHighlights);
+	_boardShadowedScene->addChild(_boardSquareSelections);
+
+	selectPosition(-1, -3, WHITE);
 }
 
 ChessBoard::~ChessBoard() {}
