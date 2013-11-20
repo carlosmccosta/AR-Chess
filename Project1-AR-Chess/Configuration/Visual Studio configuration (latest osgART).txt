@@ -167,6 +167,7 @@ osgART_debug.lib
 osgd.lib
 osgDBd.lib
 osgGAd.lib
+OSGAnimationd.lib
 osgFXd.lib
 osgSimd.lib
 osgShadowd.lib

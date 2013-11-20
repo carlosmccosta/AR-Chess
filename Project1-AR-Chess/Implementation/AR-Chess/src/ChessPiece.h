@@ -5,6 +5,7 @@
 // OSG includes
 #include <osg/MatrixTransform>
 #include <osg/Material>
+#include <osg/AnimationPath>
 
 // project includes
 #include "ChessUtils.h"
@@ -67,6 +68,7 @@ class ChessPiece : public osg::Referenced {
 		ChessPieceColor _chessPieceColor;		
 		int _xPosition;
 		int _yPosition;
+		Vec3f _pieceCurrentPosition;
 		int _xInitialPosition;
 		int _yInitialPosition;
 		bool _piecePlayable;		

@@ -190,4 +190,57 @@ Geode* ChessUtils::createRectangleWithTexture(Vec3 centerPosition, Image* image,
 }
 
 
+AnimationPath* ChessUtils::createChessPieceAnimationPath(Vec3f initialPosition, Vec3f finalPosition, float rotationAngle, Vec3f rotationAxis, float pieceTravelSpeed, size_t numberSamplesInPath) {
+	AnimationPath* animationPath = new AnimationPath();
+	animationPath->setLoopMode(osg::AnimationPath::NO_LOOPING);
 
+	Vec3 positionsOffset = finalPosition - initialPosition;
+	float positionsDistance = positionsOffset.length();	
+	float jumpHeight = positionsDistance / 2.0;
+	float maxHeightPosition = initialPosition.z() + jumpHeight;
+
+	float animationTimeSeconds = std::max(positionsDistance / pieceTravelSpeed, 2.0f);
+	float numberSamplesInPathF = (float)numberSamplesInPath;
+	float halfAnimationTime = animationTimeSeconds / 2.0;
+	
+	float deltaTime = animationTimeSeconds / numberSamplesInPathF;
+
+	// cross product to obtain a perpendicular vector in relation to the animation direction
+	//Vec3 rotationAxis = positionsOffset ^ osg::Z_AXIS;
+	
+	float fullRotation = osg::PI * 2.0;
+	osgAnimation::Motion* rotationEaseMotion = new osgAnimation::InOutCubicMotion(0, animationTimeSeconds, rotationAngle);
+	osgAnimation::Motion* xMovingEaseMotion = new osgAnimation::InOutCubicMotion(initialPosition.x(), animationTimeSeconds, positionsOffset.x());
+	osgAnimation::Motion* yMovingEaseMotion = new osgAnimation::InOutCubicMotion(initialPosition.y(), animationTimeSeconds, positionsOffset.y());
+	osgAnimation::Motion* zClimbingEaseMotion = new osgAnimation::InQuadMotion(initialPosition.z(), halfAnimationTime, jumpHeight);
+	osgAnimation::Motion* zFallingEaseMotion = new osgAnimation::OutBounceMotion(maxHeightPosition, halfAnimationTime, -jumpHeight);
+
+	size_t halfNumberSamplesInPath = numberSamplesInPath / 2;
+	double currenTime = 0;
+	for (size_t currentSamplePosition = 0; currentSamplePosition < numberSamplesInPath; ++currentSamplePosition) {
+		float sampleXPosition = xMovingEaseMotion->getValue();
+		xMovingEaseMotion->update(deltaTime);
+
+		float sampleYPosition = yMovingEaseMotion->getValue();
+		yMovingEaseMotion->update(deltaTime);
+
+		float sampleZPosition;		
+		if (currentSamplePosition < halfNumberSamplesInPath) {
+			sampleZPosition = zClimbingEaseMotion->getValue();
+			zClimbingEaseMotion->update(deltaTime);
+		} else {
+			sampleZPosition = zFallingEaseMotion->getValue();
+			zFallingEaseMotion->update(deltaTime);
+		}
+
+		float sampleRotationAngle = rotationEaseMotion->getValue();
+		rotationEaseMotion->update(deltaTime);		
+
+		Vec3 position(sampleXPosition, sampleYPosition, sampleZPosition);
+		Quat rotationQuad(sampleRotationAngle, rotationAxis);
+		animationPath->insert(currenTime, AnimationPath::ControlPoint(position, rotationQuad));
+		currenTime += deltaTime;
+	}
+
+	return animationPath;
+}

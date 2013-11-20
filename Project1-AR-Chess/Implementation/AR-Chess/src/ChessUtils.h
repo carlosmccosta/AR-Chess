@@ -11,6 +11,8 @@
 #include <osg/TexEnv>
 #include <osg/BlendFunc>
 #include <osg/ComputeBoundsVisitor>
+#include <osg/AnimationPath>
+#include <osgAnimation/EaseMotion>
 #include <osgDB/FileUtils>
 #include <osgDB/ReadFile>
 
@@ -25,6 +27,7 @@ using osg::Vec3;
 using osg::Vec3i;
 using osg::Vec3f;
 using osg::Vec4;
+using osg::Quat;
 using osg::Vec2Array;
 using osg::Vec3Array;
 using osg::Matrix;
@@ -39,6 +42,8 @@ using osg::LightSource;
 using osg::Group;
 using osg::StateSet;
 using osg::Material;
+using osg::AnimationPath;
+using osg::AnimationPathCallback;
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  </includes> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
@@ -69,5 +74,7 @@ namespace ChessUtils {
 		Vec4 ambient = Vec4(0.1f, 0.1f, 0.1f, 1.0f));
 
 	Geode* createRectangleWithTexture(Vec3 centerPosition = Vec3(0, 0, 0), Image* image = NULL, int width = BOARD_SQUARE_SIZE, int height = BOARD_SQUARE_SIZE, Vec4 color = Vec4(1.0f, 1.0f, 1.0f, 0.8f));
+
+	AnimationPath* createChessPieceAnimationPath(Vec3f initialPosition, Vec3f finalPosition, float rotationAngle = 0, Vec3f rotationAxis = osg::Z_AXIS, float pieceTravelSpeed = PIECE_MOVE_ANIMATION_TRAVEL_SPEED, size_t numberSamplesInPath = 128);
 };
 

@@ -13,7 +13,7 @@ ChessPiece::ChessPiece(ChessPieceType chessPieceType, ChessPieceColor chessPiece
 	// necessary parameters to position piece in board
 	string name = getPieceModelPath(chessPieceType, chessPieceColor);
 	float modelSize = getPieceModelSize(chessPieceType);
-	Vec3f pieceScenePosition = ChessUtils::computePieceScenePosition(xPosition, yPosition);
+	_pieceCurrentPosition = ChessUtils::computePieceScenePosition(xPosition, yPosition);
 	double rotationAngle = 0;
 	Vec3f rotationAxis = Vec3f(0.0, 0.0, 1.0);
 	
@@ -26,7 +26,7 @@ ChessPiece::ChessPiece(ChessPieceType chessPieceType, ChessPieceColor chessPiece
 		rotationAngle = osg::PI;
 	}
 
-	_pieceMatrixTransform = ChessUtils::loadOSGModel(name, modelSize, material, false, pieceScenePosition, rotationAngle, rotationAxis);
+	_pieceMatrixTransform = ChessUtils::loadOSGModel(name, modelSize, material, false, _pieceCurrentPosition, rotationAngle, rotationAxis);
 	_pieceMatrixTransform->setNodeMask(CAST_SHADOW_MASK);
 }
 
@@ -121,8 +121,11 @@ void ChessPiece::changePosition(int xPosition, int yPosition) {
 	_xPosition = xPosition;
 	_yPosition = yPosition;
 
-	Vec3f pieceScenePosition = ChessUtils::computePieceScenePosition(xPosition, yPosition);
-	_pieceMatrixTransform->setMatrix(Matrix::translate(pieceScenePosition));
+	Vec3f finalPieceScenePosition = ChessUtils::computePieceScenePosition(xPosition, yPosition);
+
+	osg::AnimationPathCallback* animationPathCallback = new osg::AnimationPathCallback(ChessUtils::createChessPieceAnimationPath(_pieceCurrentPosition, finalPieceScenePosition));
+	_pieceMatrixTransform->setUpdateCallback(animationPathCallback);
+	_pieceCurrentPosition = finalPieceScenePosition;
 }
 
 void ChessPiece::removePieceFromBoard() {
@@ -130,16 +133,16 @@ void ChessPiece::removePieceFromBoard() {
 	_yPosition = 0;
 	_piecePlayable = false;
 
-	Vec3f pieceScenePosition = ChessUtils::computePieceScenePosition(_xInitialPosition, _yInitialPosition);
+	Vec3f finalPieceScenePosition = ChessUtils::computePieceScenePosition(_yInitialPosition, -_xInitialPosition);
 	if (_yInitialPosition < 0) {
-		pieceScenePosition.y() -= (2 * BOARD_SQUARE_SIZE + PIECE_OUTSIDE_OFFSET);
+		finalPieceScenePosition.x() -= (2 * BOARD_SQUARE_SIZE + PIECE_OUTSIDE_OFFSET);
 	} else {
-		pieceScenePosition.y() += (2 * BOARD_SQUARE_SIZE + PIECE_OUTSIDE_OFFSET);
-	}
+		finalPieceScenePosition.x() += (2 * BOARD_SQUARE_SIZE + PIECE_OUTSIDE_OFFSET);
+	}		
 
-	_pieceMatrixTransform->setMatrix(Matrix::identity());
-	_pieceMatrixTransform->postMult(Matrix::translate(pieceScenePosition));
-	_pieceMatrixTransform->postMult(Matrix::rotate(osg::PI_2, Vec3(0, 0, 1)));
+	osg::AnimationPathCallback* animationPathCallback = new osg::AnimationPathCallback(ChessUtils::createChessPieceAnimationPath(_pieceCurrentPosition, finalPieceScenePosition, -osg::PI_2));
+	_pieceMatrixTransform->setUpdateCallback(animationPathCallback);
+	_pieceCurrentPosition = finalPieceScenePosition;
 }
 
 
