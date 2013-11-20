@@ -15,6 +15,7 @@
 #define BOARD_SQUARE_SIZE 24
 
 #define PIECE_HEIGHT_OFFSET -0.01
+#define PIECE_OUTSIDE_OFFSET 2
 #define PIECE_KING_SIZE 27
 #define PIECE_QUEEN_SIZE 25
 #define PIECE_ROOK_SIZE 20
@@ -37,6 +38,7 @@
 #define PADDLE_OVERLAYS_HEIGHT_OFFSET 0.01
 #define PADDLE_SELECTOR "images/blue_circle.png"
 #define PADDLE_SELECTED "images/blue_and_orange_circle.png"
+#define PADDLE_TIME_TO_SELECT_POSITION 2000 
 
 #define RECEIVE_SHADOW_MASK 0x1
 #define CAST_SHADOW_MASK 0x2

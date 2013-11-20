@@ -6,6 +6,8 @@ ChessPiece::ChessPiece(ChessPieceType chessPieceType, ChessPieceColor chessPiece
 	_chessPieceColor(chessPieceColor),
 	_xPosition(xPosition),
 	_yPosition(yPosition),
+	_xInitialPosition(xPosition),
+	_yInitialPosition(yPosition),
 	_piecePlayable(true) {
 
 	// necessary parameters to position piece in board
@@ -115,6 +117,38 @@ float ChessPiece::getPieceModelSize(ChessPieceType chessPieceType) {
 }
 
 
-bool ChessPiece::changePosition(int xPosition, int yPosition) {
-	return false;
+void ChessPiece::changePosition(int xPosition, int yPosition) {
+	_xPosition = xPosition;
+	_yPosition = yPosition;
+
+	Vec3f pieceScenePosition = ChessUtils::computePieceScenePosition(xPosition, yPosition);
+	_pieceMatrixTransform->setMatrix(Matrix::translate(pieceScenePosition));
 }
+
+void ChessPiece::removePieceFromBoard() {
+	_xPosition = 0;
+	_yPosition = 0;
+	_piecePlayable = false;
+
+	Vec3f pieceScenePosition = ChessUtils::computePieceScenePosition(_xInitialPosition, _yInitialPosition);
+	if (_yInitialPosition < 0) {
+		pieceScenePosition.y() -= (2 * BOARD_SQUARE_SIZE + PIECE_OUTSIDE_OFFSET);
+	} else {
+		pieceScenePosition.y() += (2 * BOARD_SQUARE_SIZE + PIECE_OUTSIDE_OFFSET);
+	}
+
+	_pieceMatrixTransform->setMatrix(Matrix::identity());
+	_pieceMatrixTransform->postMult(Matrix::translate(pieceScenePosition));
+	_pieceMatrixTransform->postMult(Matrix::rotate(osg::PI_2, Vec3(0, 0, 1)));
+}
+
+
+ChessPieceColor ChessPiece::getOpponentChessPieceColor(ChessPieceColor chessPieceColor) {
+	ChessPieceColor opponentPieceColor = BLACK;
+	if (chessPieceColor == BLACK) {
+		opponentPieceColor = WHITE;
+	}
+
+	return opponentPieceColor;
+}
+

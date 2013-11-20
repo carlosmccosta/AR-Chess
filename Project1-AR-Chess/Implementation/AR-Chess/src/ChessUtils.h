@@ -20,6 +20,7 @@
 // namespace specific imports to avoid namespace pollution
 using std::string;
 using osg::Vec2;
+using osg::Vec2i;
 using osg::Vec3;
 using osg::Vec3i;
 using osg::Vec3f;
@@ -43,7 +44,7 @@ using osg::Material;
 
 namespace ChessUtils {
 	Vec3f computePieceScenePosition(int boardXPosition, int boardYPosition);
-	Vec3i computePieceBoardPosition(Vec3 scenePosition);
+	Vec2i computePieceBoardPosition(Vec3 scenePosition);
 
 	MatrixTransform* loadOSGModel(string name, float modelSize, Material* material = NULL, bool overrideMaterial = false,
 		Vec3 modelCenterShift = Vec3(0.0, 0.0, 0.0),
@@ -67,6 +68,6 @@ namespace ChessUtils {
 		Vec4 diffuse = Vec4(0.4f, 0.4f, 0.4f, 1.0f),
 		Vec4 ambient = Vec4(0.1f, 0.1f, 0.1f, 1.0f));
 
-	Geode* createRectangleWithTexture(Vec3 centerPosition = Vec3(0, 0, 0), Image* image = NULL, int width = BOARD_SQUARE_SIZE, int height = BOARD_SQUARE_SIZE, Vec4 color = Vec4(1.0f, 1.0f, 1.0f, 1.0f));
+	Geode* createRectangleWithTexture(Vec3 centerPosition = Vec3(0, 0, 0), Image* image = NULL, int width = BOARD_SQUARE_SIZE, int height = BOARD_SQUARE_SIZE, Vec4 color = Vec4(1.0f, 1.0f, 1.0f, 0.8f));
 };
 

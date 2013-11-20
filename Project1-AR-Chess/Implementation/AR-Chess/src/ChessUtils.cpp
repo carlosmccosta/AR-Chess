@@ -26,11 +26,10 @@ Vec3f ChessUtils::computePieceScenePosition(int boardXPosition, int boardYPositi
 }
 
 
-Vec3i ChessUtils::computePieceBoardPosition(Vec3 scenePosition) {
-	Vec3i boardPosition;
+Vec2i ChessUtils::computePieceBoardPosition(Vec3 scenePosition) {
+	Vec2i boardPosition;
 	boardPosition.x() = scenePosition.x() / BOARD_SQUARE_SIZE;
-	boardPosition.y() = scenePosition.y() / BOARD_SQUARE_SIZE;
-	boardPosition.z() = scenePosition.z() / BOARD_SQUARE_SIZE;
+	boardPosition.y() = scenePosition.y() / BOARD_SQUARE_SIZE;	
 
 	if (scenePosition.x() < 0) {
 		--boardPosition.x();
@@ -40,16 +39,8 @@ Vec3i ChessUtils::computePieceBoardPosition(Vec3 scenePosition) {
 
 	if (scenePosition.y() < 0) {
 		--boardPosition.y();
-	}
-	else {
+	} else {
 		++boardPosition.y();
-	}
-
-	if (scenePosition.z() < 0) {
-		--boardPosition.z();
-	}
-	else {
-		++boardPosition.z();
 	}
 
 	return boardPosition;
@@ -79,7 +70,7 @@ MatrixTransform* ChessUtils::loadOSGModel(string name, float modelSize, Material
 		
 		double scaleRatio = modelSize / bound.radius();
 
-		MatrixTransform* unitTransform = new MatrixTransform();
+		MatrixTransform* unitTransform = new MatrixTransform();		
 		unitTransform->postMult(Matrix::translate(-bound.center().x(), -bound.center().y(), -bound.center().z()));
 		unitTransform->postMult(Matrix::rotate(rotationAngle, rotationAxis));
 		unitTransform->postMult(Matrix::scale(scaleRatio, scaleRatio, scaleRatio));
@@ -90,9 +81,10 @@ MatrixTransform* ChessUtils::loadOSGModel(string name, float modelSize, Material
 		unitTransform->accept(cbVisitor);
 		osg::BoundingBox boundingBox = cbVisitor.getBoundingBox();
 				
-		modelCenterShift.x() += (boundingBox.xMax() - boundingBox.xMin()) * xModelCenterOffsetPercentage;
-		modelCenterShift.y() += (boundingBox.yMax() - boundingBox.yMin()) * yModelCenterOffsetPercentage;
-		modelCenterShift.z() += (boundingBox.zMax() - boundingBox.zMin()) * zModelCenterOffsetPercentage;
+		float modelXOffset = (boundingBox.xMax() - boundingBox.xMin()) * xModelCenterOffsetPercentage;
+		float modelYOffset = (boundingBox.yMax() - boundingBox.yMin()) * yModelCenterOffsetPercentage;
+		float modelZOffset = (boundingBox.zMax() - boundingBox.zMin()) * zModelCenterOffsetPercentage;
+		unitTransform->postMult(Matrix::translate(modelXOffset, modelYOffset, modelZOffset));		
 
 		MatrixTransform* modelPositionTransform = new MatrixTransform();		
 		modelPositionTransform->postMult(Matrix::translate(modelCenterShift));
@@ -162,7 +154,7 @@ Geode* ChessUtils::createRectangleWithTexture(Vec3 centerPosition, Image* image,
 	texcoords->push_back(Vec2(1.0f, 1.0f));
 	texcoords->push_back(Vec2(0.0f, 1.0f));
 
-	osg::ref_ptr<osg::Vec4Array> colors = new osg::Vec4Array;
+	osg::Vec4Array* colors = new osg::Vec4Array;
 	colors->push_back(color);
 
 	Geometry* quad = new Geometry();

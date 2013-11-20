@@ -142,16 +142,10 @@ void ChessScene::setupLights() {
 void ChessScene::updateScene() {
 	Vec3 boardScenePosition = _boardTrackerMT->getMatrix().getTrans();
 	Vec3 selectorScenePosition = _selectorTrackerMT->getMatrix().getTrans();	
-
-	// only update if board and selector are visible
-	/*if (boardScenePosition.x() != 0 && boardScenePosition.y() != 0 && boardScenePosition.z() != 0 &&
-		selectorScenePosition.x() != 0 && selectorScenePosition.y() != 0 && selectorScenePosition.z() != 0) {*/
-		Vec3 offset = selectorScenePosition - boardScenePosition;
-		Vec3i selectorBoardPosition = ChessUtils::computePieceBoardPosition(offset);
-		_gameBoard.updateBoard(selectorBoardPosition);
-	/*} else {
-		_gameBoard.clearHighlights();
-	}*/
+	
+	Vec3 offset = selectorScenePosition - boardScenePosition;
+	Vec2i selectorBoardPosition = ChessUtils::computePieceBoardPosition(offset);
+	_gameBoard.updateBoard(selectorBoardPosition);	
 }
 
 
