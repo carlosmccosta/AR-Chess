@@ -4,11 +4,8 @@
 ChessBoard::ChessBoard() {
 	_paddleSelectorImage = osgDB::readImageFile(PADDLE_SELECTOR);
 	_paddleSelectedImage = osgDB::readImageFile(PADDLE_SELECTED);
-	_currentPlayer = WHITE;
-	_moveOriginPosition = Vec2(0, 0);
-	_moveDestinationPosition = Vec2(0, 0);
-	_lastSelectorBoardPosition = Vec2i(0, 0);
-	_selectorTimer = new ElapsedTime();
+
+	_font3D = osgText::readFont3DFile(TEXT_FONT);
 
 	// materials setup
 	float boardShininess = 128.0;
@@ -56,9 +53,14 @@ ChessBoard::ChessBoard() {
 		xModelCenterOffsetPercentage, yModelCenterOffsetPercentage, zModelCenterOffsetPercentage);
 	boardModelMT->setNodeMask(RECEIVE_SHADOW_MASK);
 
+	_playersTimers = new Group();
 	_boardSquareSelectorHighlights = new Group();
-	_boardSquareSelections = new Group();
-	_boardShadowedScene->addChild(boardModelMT);	
+	_boardSquareSelections = new Group();	
+	
+	setupPlayersTimers();
+
+	_boardShadowedScene->addChild(boardModelMT);
+	_boardShadowedScene->addChild(_playersTimers);
 	_boardShadowedScene->addChild(_boardSquareSelectorHighlights);
 	_boardShadowedScene->addChild(_boardSquareSelections);	
 }
@@ -70,6 +72,20 @@ osgShadow::ShadowedScene* ChessBoard::setupBoard() {
 	// reset board
 	_whiteChessPieces.clear();
 	_blackChessPieces.clear();
+
+	_currentPlayer = WHITE;
+	_moveOriginPosition = Vec2(0, 0);
+	_moveDestinationPosition = Vec2(0, 0);
+	_lastSelectorBoardPosition = Vec2i(0, 0);
+	_selectorTimer = new ElapsedTime();
+	_whitePlayerGameTimer = NULL;
+	_blackPlayerGameTimer = NULL;	
+	_animationInProgress = false;
+	_animationDelayBetweenMoves = new ElapsedTime();
+	_whitePlayerGameTimerD = 0;
+	_blackPlayerGameTimerD = 0;
+
+	updatePlayerStatus(_whitePlayerGameTimerText, _blackPlayerGameTimerText);
 	
 	//setup initial positions
 
@@ -121,8 +137,76 @@ osgShadow::ShadowedScene* ChessBoard::setupBoard() {
 }
 
 
+void ChessBoard::setupPlayersTimers() {
+	float playersStatusXOffsetToBoardBorder = 4 * BOARD_SQUARE_SIZE + PLAYER_STATUS_BOARD_OFFSET;
+	_whitePlayerStatus = ChessUtils::createRectangleWithTexture(
+		Vec3(-PLAYER_STATUS_TEXT_LEFT_OFFSET, -PLAYER_STATUS_TEXT_UP_OFFSET, BOARD_OVERLAYS_HEIGHT_OFFSET),
+		osgDB::readImageFile(WHITE_PLAYER_STATUS_IMG), PLAYER_STATUS_WIDTH, PLAYER_STATUS_HEIGHT);
+
+	_blackPlayerStatus = ChessUtils::createRectangleWithTexture(
+		Vec3(-PLAYER_STATUS_TEXT_LEFT_OFFSET, -PLAYER_STATUS_TEXT_UP_OFFSET, BOARD_OVERLAYS_HEIGHT_OFFSET),
+		osgDB::readImageFile(BLACK_PLAYER_STATUS_IMG), PLAYER_STATUS_WIDTH, PLAYER_STATUS_HEIGHT);
+
+	_whitePlayerGameTimerText = ChessUtils::createText3D(ChessUtils::formatSecondsToDate(0), _font3D);
+	_blackPlayerGameTimerText = ChessUtils::createText3D(ChessUtils::formatSecondsToDate(0), _font3D);
+
+	setupPlayerTimer(_whitePlayerStatus, _whitePlayerGameTimerText, osg::PI_2, -playersStatusXOffsetToBoardBorder);
+	setupPlayerTimer(_blackPlayerStatus, _blackPlayerGameTimerText, -osg::PI_2, playersStatusXOffsetToBoardBorder);
+}
+
+
+void ChessBoard::setupPlayerTimer(Geode* backgroundImage, Text3D* timerText, float rotationAngle, float playersStatusXOffsetToBoardBorder) {
+	MatrixTransform* playerTimerMT = new MatrixTransform();	
+	playerTimerMT->addChild(backgroundImage);
+	
+	Geode* timerTextGeode = new Geode();
+	timerTextGeode->addDrawable(timerText);		
+
+	playerTimerMT->addChild(timerTextGeode);
+	playerTimerMT->postMult(Matrix::rotate(rotationAngle, osg::Z_AXIS));
+	playerTimerMT->postMult(Matrix::translate(playersStatusXOffsetToBoardBorder, 0, 0));
+	_playersTimers->addChild(playerTimerMT);
+}
+
+
 bool ChessBoard::updateBoard(Vec2i selectorBoardPosition) {
+	if (_animationInProgress) {
+		if (_animationDelayBetweenMoves->elapsedTime() < PIECE_MOVE_MAX_ANIMATION_DURATION_SECONDS) {
+			return false;
+		} else {
+			_animationInProgress = false;
+			clearSelections();
+			_currentPlayer = ChessPiece::getOpponentChessPieceColor(_currentPlayer);
+
+			if (_currentPlayer == WHITE) {
+				updatePlayerStatus(_whitePlayerGameTimerText, _blackPlayerGameTimerText);
+			} else {
+				updatePlayerStatus(_blackPlayerGameTimerText, _whitePlayerGameTimerText);
+			}
+		}
+	}
+
+
 	if (isPositionValid(selectorBoardPosition.x()) && isPositionValid(selectorBoardPosition.y())) {
+		// start timers when player moves paddle inside board for first time in the game
+		if (_currentPlayer == WHITE) {			
+			if (_whitePlayerGameTimer == NULL) {
+				_whitePlayerGameTimer = new ElapsedTime();
+			}
+
+			_whitePlayerGameTimerText->setText(ChessUtils::formatSecondsToDate(_whitePlayerGameTimerD + _whitePlayerGameTimer->elapsedTime()));
+		}
+
+		if (_currentPlayer == BLACK) {
+			if (_blackPlayerGameTimer == NULL) {
+				_blackPlayerGameTimer = new ElapsedTime();
+			}
+
+			_blackPlayerGameTimerText->setText(ChessUtils::formatSecondsToDate(_blackPlayerGameTimerD + _blackPlayerGameTimer->elapsedTime()));
+		}
+
+
+
 		if (selectorBoardPosition.x() != _lastSelectorBoardPosition.x() || selectorBoardPosition.y() != _lastSelectorBoardPosition.y()) {
 			// selector in new board position
 			clearHighlights();
@@ -151,7 +235,7 @@ bool ChessBoard::updateBoard(Vec2i selectorBoardPosition) {
 					if (movePositionStatus == SAME_POSITION_AS_ORIGIN) {
 						_moveOriginPosition.x() = 0;
 						_moveOriginPosition.y() = 0;				
-						clearSelections();						
+						clearSelections();				
 						hightLighPosition(selectorBoardPosition.x(), selectorBoardPosition.y());
 						_selectorTimer->reset();
 						return false;
@@ -173,11 +257,25 @@ bool ChessBoard::updateBoard(Vec2i selectorBoardPosition) {
 						}
 						
 						// animate piece movement to final destination
-						selectPosition(selectorBoardPosition.x(), selectorBoardPosition.y(), _currentPlayer);
+						clearHighlights();
+						clearSelections();
+						//selectPosition(selectorBoardPosition.x(), selectorBoardPosition.y(), _currentPlayer);
 						moveChessPieceWithAnimation(_pieceToMove, _moveDestinationPosition);
-					
-						_currentPlayer = ChessPiece::getOpponentChessPieceColor(_currentPlayer);
-						_selectorTimer->reset();						
+																
+						if (_currentPlayer == WHITE) {
+							_whitePlayerGameTimerD += _whitePlayerGameTimer->elapsedTime();
+							_whitePlayerGameTimer->finish();
+							_whitePlayerGameTimer = NULL;																				
+						} else {
+							_blackPlayerGameTimerD += _blackPlayerGameTimer->elapsedTime();
+							_blackPlayerGameTimer->finish();
+							_blackPlayerGameTimer = NULL;
+						}
+						
+						_selectorTimer->reset();
+						_animationDelayBetweenMoves->reset();
+						_animationInProgress = true;
+
 						return true;
 					}
 				}
@@ -191,6 +289,12 @@ bool ChessBoard::updateBoard(Vec2i selectorBoardPosition) {
 	}
 	
 	return false;
+}
+
+
+void ChessBoard::updatePlayerStatus(Text3D* makeActive, Text3D* makeInactive) {
+	makeActive->setColor(Vec4(0.3, 0.5, 0.3, 0.8));
+	makeInactive->setColor(Vec4(0.4, 0.4, 0.4, 0.8));	
 }
 
 
@@ -214,8 +318,8 @@ bool ChessBoard::hightLighPosition(int xBoardPosition, int yBoardPosition) {
 	}
 
 	Vec3f scenePosition = ChessUtils::computePieceScenePosition(xBoardPosition, yBoardPosition);
-	scenePosition.z() = PADDLE_OVERLAYS_HEIGHT_OFFSET;
-	_boardSquareSelectorHighlights->addChild(ChessUtils::createRectangleWithTexture(scenePosition, new Image(*_paddleSelectorImage, osg::CopyOp::DEEP_COPY_ALL)));
+	scenePosition.z() = BOARD_OVERLAYS_HEIGHT_OFFSET;
+	_boardSquareSelectorHighlights->addChild(ChessUtils::createRectangleWithTexture(scenePosition, new Image(*_paddleSelectorImage)));
 	return true;
 }
 
@@ -228,8 +332,8 @@ ChessPiece* ChessBoard::selectPosition(int xBoardPosition, int yBoardPosition, C
 	ChessPiece* chessPieceAtPosition = getChessPieceAtBoardPosition(xBoardPosition, yBoardPosition, chessPieceColor);
 	if (!selectOnlyIfExistsPiece || (selectOnlyIfExistsPiece && chessPieceAtPosition != NULL)) {
 		Vec3f scenePosition = ChessUtils::computePieceScenePosition(xBoardPosition, yBoardPosition);
-		scenePosition.z() = PADDLE_OVERLAYS_HEIGHT_OFFSET;
-		_boardSquareSelections->addChild(ChessUtils::createRectangleWithTexture(scenePosition, new Image(*_paddleSelectedImage, osg::CopyOp::DEEP_COPY_ALL)));
+		scenePosition.z() = BOARD_OVERLAYS_HEIGHT_OFFSET;
+		_boardSquareSelections->addChild(ChessUtils::createRectangleWithTexture(scenePosition, new Image(*_paddleSelectedImage)));
 	}
 
 	return chessPieceAtPosition;
@@ -328,7 +432,6 @@ void ChessBoard::moveChessPieceWithAnimation(ChessPiece* chessPiece, Vec2 finalP
 	_moveOriginPosition.y() = 0;
 	_moveDestinationPosition.x() = 0;
 	_moveDestinationPosition.y() = 0;
-	clearSelections();
 	
 	chessPiece->changePosition(finalPosition.x(), finalPosition.y());
 }

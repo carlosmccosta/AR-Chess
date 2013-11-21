@@ -190,6 +190,64 @@ Geode* ChessUtils::createRectangleWithTexture(Vec3 centerPosition, Image* image,
 }
 
 
+Geometry* ChessUtils::createQuadWithTexture(string filename, const Vec3& corner, const Vec3& widthVec, const Vec3& heightVec) {
+	Image* image = osgDB::readImageFile(filename);
+	Texture2D* texture = new Texture2D();
+	texture->setImage(image);
+
+	osg::BlendFunc* blendFunc = new osg::BlendFunc();
+	blendFunc->setFunction(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	osg::TexEnv* blendTexEnv = new osg::TexEnv();
+	blendTexEnv->setMode(osg::TexEnv::BLEND);
+
+	Geometry* quad = osg::createTexturedQuadGeometry(corner, widthVec, heightVec);
+
+	osg::StateSet* geometryStateset = quad->getOrCreateStateSet();
+	geometryStateset->setAttributeAndModes(blendFunc);
+	geometryStateset->setTextureAttribute(0, blendTexEnv);
+	geometryStateset->setTextureAttributeAndModes(0, texture);
+	geometryStateset->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
+
+	return quad;
+}
+
+
+Geometry* ChessUtils::createHUDQuadWithTexture(string filename, int width, int height, Vec3 corner) {
+	return createQuadWithTexture(filename, corner, Vec3(width, 0, 0), Vec3(0, 0, height));
+}
+
+
+Camera* ChessUtils::createHUDCamera(unsigned int screenWidth, unsigned int screenHeight) {
+	Camera* camera = new Camera();
+	camera->setReferenceFrame(osg::Transform::ABSOLUTE_RF);
+	camera->setClearMask(GL_DEPTH_BUFFER_BIT);
+	camera->setRenderOrder(Camera::POST_RENDER);
+	camera->setAllowEventFocus(false);
+	camera->setProjectionMatrix(Matrix::ortho2D(0, screenWidth, 0, screenHeight));
+	//camera->setViewMatrix(osg::Matrix::identity());
+	camera->setViewMatrixAsLookAt(Vec3(0, 0, 100), Vec3(0, 0, 0), Vec3(0, 1, 0));
+	camera->getOrCreateStateSet()->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
+
+	return camera;
+}
+
+
+Text3D* ChessUtils::createText3D(const string& content, Font3D* font3D, const Vec3& position, float size, float depth) {
+	Text3D* text = new Text3D();
+	text->setFont(font3D);
+	text->setCharacterSize(size);
+	text->setCharacterDepth(depth);
+	text->setAlignment(osgText::TextBase::CENTER_CENTER);
+	text->setAxisAlignment(osgText::TextBase::XY_PLANE);
+	text->setPosition(position);
+	text->setText(content);	
+
+	return text;
+}
+
+
+
 AnimationPath* ChessUtils::createChessPieceAnimationPath(Vec3f initialPosition, Vec3f finalPosition, float rotationAngle, Vec3f rotationAxis, float pieceTravelSpeed, size_t numberSamplesInPath) {
 	AnimationPath* animationPath = new AnimationPath();
 	animationPath->setLoopMode(osg::AnimationPath::NO_LOOPING);
@@ -243,4 +301,40 @@ AnimationPath* ChessUtils::createChessPieceAnimationPath(Vec3f initialPosition, 
 	}
 
 	return animationPath;
+}
+
+
+
+string ChessUtils::formatSecondsToDate(double seconds) {
+	unsigned short secondsFinal = (unsigned short)fmod(seconds, 60);
+
+	double minutes = seconds / 60.0;
+	unsigned short minutesFinal = (unsigned short)fmod(minutes, 60.0);
+
+	double hours = minutes / 60;
+	unsigned short hoursFinal = (unsigned short)fmod(hours, 24.0);
+
+	unsigned short daysFinal = (unsigned short)(hours / 24.0);
+
+	stringstream timeFormated;
+	if (daysFinal != 0) {
+		timeFormated << daysFinal << "d ";
+	}
+
+	if (hoursFinal < 10) {
+		timeFormated << 0;
+	}
+	timeFormated << hoursFinal << "h ";	
+	
+	if (minutesFinal < 10) {
+		timeFormated << 0;
+	}
+	timeFormated << minutesFinal << "m ";
+	
+	if (secondsFinal < 10) {
+		timeFormated << 0;
+	}			
+	timeFormated << secondsFinal << "s";
+
+	return timeFormated.str();
 }

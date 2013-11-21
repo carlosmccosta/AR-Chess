@@ -136,9 +136,17 @@ void ChessPiece::removePieceFromBoard() {
 	Vec3f finalPieceScenePosition = ChessUtils::computePieceScenePosition(_yInitialPosition, -_xInitialPosition);
 	if (_yInitialPosition < 0) {
 		finalPieceScenePosition.x() -= (2 * BOARD_SQUARE_SIZE + PIECE_OUTSIDE_OFFSET);
+		if (_yInitialPosition == -4) {
+			finalPieceScenePosition.x() += BOARD_SQUARE_SIZE / 3.0;
+		}
 	} else {
 		finalPieceScenePosition.x() += (2 * BOARD_SQUARE_SIZE + PIECE_OUTSIDE_OFFSET);
-	}		
+		if (_yInitialPosition == 4) {
+			finalPieceScenePosition.x() -= BOARD_SQUARE_SIZE / 3.0;
+		}
+	}
+
+	finalPieceScenePosition.y() *= BOARD_SQUARE_SHRINK_RATIO_FOR_OUTSIDE_PIECES;
 
 	osg::AnimationPathCallback* animationPathCallback = new osg::AnimationPathCallback(ChessUtils::createChessPieceAnimationPath(_pieceCurrentPosition, finalPieceScenePosition, -osg::PI_2));
 	_pieceMatrixTransform->setUpdateCallback(animationPathCallback);

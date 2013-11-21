@@ -164,13 +164,14 @@ C:\Program Files (x86)\osgART\lib
 
 -> Project properties -> Configuration Properties -> Linker -> Input -> Additional Dependencies
 osgART_debug.lib
+osgAnimationd.lib
 osgd.lib
 osgDBd.lib
-osgGAd.lib
-OSGAnimationd.lib
 osgFXd.lib
+osgGAd.lib
 osgSimd.lib
 osgShadowd.lib
+osgTextd.lib
 osgViewerd.lib
 
 -> Project properties -> Configuration Properties -> Linker -> Advanced -> Image Has Safe Exceptions Handles

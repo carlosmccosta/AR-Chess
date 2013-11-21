@@ -7,6 +7,7 @@
 #include <osg/ShapeDrawable>
 #include <osg/Referenced>
 #include <osg/LightModel>
+#include <osg/Camera>
 #include <osgViewer/Viewer>
 #include <osgViewer/ViewerEventHandlers>
 #include <osgGA/TrackballManipulator>
@@ -31,6 +32,7 @@ using osg::Node;
 using osg::Vec3;
 using osg::Vec3f;
 using osg::MatrixTransform;
+using osg::Camera;
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  </includes> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
@@ -58,12 +60,17 @@ class ChessScene : public osg::Referenced {
 		osgViewer::Viewer _viewer;		
 		Group* _lightGroup;
 		LightSource* _mainLightSource;
-		osgART::Scene* _boardScene;
-		osgFX::AnisotropicLighting* _anisotropicLighting;
-		osgFX::SpecularHighlights* _specularHighlights;
+		osgART::Scene* _boardScene;		
 		MatrixTransform* _boardTrackerMT;
-		MatrixTransform* _selectorTrackerMT;
+		MatrixTransform* _selectorTrackerMT;				
 		ChessBoard _gameBoard;
+
+		//Camera* _gameStatusHUD;
+		//osgFX::AnisotropicLighting* _anisotropicLighting;
+		//osgFX::SpecularHighlights* _specularHighlights;
+		//Font3D* _font3D;
+		//unsigned int _screenWidth;
+		//unsigned int _screenHeight;
 };
 
 

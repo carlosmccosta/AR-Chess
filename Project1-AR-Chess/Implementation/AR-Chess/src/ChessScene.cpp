@@ -1,8 +1,26 @@
 #include "ChessScene.h"
 
-ChessScene::ChessScene() {
+ChessScene::ChessScene() {	
 	_boardScene = new osgART::Scene();
 	_lightGroup = new Group();
+
+	//osg::GraphicsContext::WindowingSystemInterface* wsi = osg::GraphicsContext::getWindowingSystemInterface();
+	//if (wsi == NULL) {
+	//	_screenWidth = 1024;
+	//	_screenWidth = 768;
+	//}
+	//else {
+	//	wsi->getScreenResolution(osg::GraphicsContext::ScreenIdentifier(0), _screenWidth, _screenHeight);
+	//}
+	//
+	//_font3D = osgText::readFont3DFile(TEXT_FONT);	
+	//	
+	//_gameStatusHUD = ChessUtils::createHUDCamera(_screenWidth, _screenHeight);	
+	//Geode* gameHUD = new Geode();
+	//gameHUD->getOrCreateStateSet()->setRenderingHint(StateSet::TRANSPARENT_BIN);
+	//gameHUD->getOrCreateStateSet()->setMode(GL_LIGHTING, osg::StateAttribute::OFF);	
+	//gameHUD->addDrawable(ChessUtils::createText3D("00:00:00", _font3D, Vec3(0, -10, 0), 40, 20));
+	//_gameStatusHUD->addChild(gameHUD);
 }
 
 ChessScene::~ChessScene() {}

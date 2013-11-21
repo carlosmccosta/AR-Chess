@@ -44,8 +44,11 @@ class ChessBoard : public osg::Referenced {
 		ChessBoard();
 		virtual ~ChessBoard();
 		osgShadow::ShadowedScene* setupBoard();
+		void setupPlayersTimers();
+		void setupPlayerTimer(Geode* backgroundImage, Text3D* timerText, float rotationAngle, float playersStatusXOffsetToBoardBorder);
 
 		bool updateBoard(Vec2i selectorBoardPosition);
+		void updatePlayerStatus(Text3D* makeActive, Text3D* makeInactive);
 		void clearHighlights();
 		void clearSelections();
 		void clearPossibleMoves();
@@ -79,11 +82,24 @@ class ChessBoard : public osg::Referenced {
 		Image* _paddleSelectorImage;
 		Image* _paddleSelectedImage;
 		Vec2i _lastSelectorBoardPosition;
+		Font3D* _font3D;
 		
+		Group* _playersTimers;
 		Group* _boardSquareSelectorHighlights;
 		Group* _boardSquareSelections;
 		Group* _boardSquarePossibleMoves;
 
 		ElapsedTime* _selectorTimer;
+		ElapsedTime* _animationDelayBetweenMoves;
+		bool _animationInProgress;
+
+		ElapsedTime* _whitePlayerGameTimer;
+		double _whitePlayerGameTimerD;
+		ElapsedTime* _blackPlayerGameTimer;
+		double _blackPlayerGameTimerD;
+		Geode* _whitePlayerStatus;
+		Geode* _blackPlayerStatus;
+		Text3D* _whitePlayerGameTimerText;		
+		Text3D* _blackPlayerGameTimerText;
 };
 
