@@ -10,6 +10,9 @@
 #define TRACKER_BOARD_CONFIG "multi;patterns/artoolkit/multi/board.dat"
 #define TRACKER_SELECTOR_CONFIG "single;patterns/artoolkit/patt.selector;50;0;0"
 
+#define TRACKER_SELECTOR_PARTICLE "images/selector_particle.png"
+#define TRACKER_SELECTOR_PARTICLE_HEIGHT_OFFSET 6
+
 #define BOARD_SIZE 200
 #define BOARD_MODEL "3d_models/board.ive"
 #define BOARD_SQUARE_SIZE 24

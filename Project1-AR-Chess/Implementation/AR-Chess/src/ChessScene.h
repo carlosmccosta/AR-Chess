@@ -23,6 +23,7 @@
 // project includes
 #include "ChessBoard.h"
 #include "ChessUtils.h"
+#include "CloudParticleSystem.h"
 
 
 // namespace specific imports to avoid namespace pollution
@@ -63,7 +64,10 @@ class ChessScene : public osg::Referenced {
 		osgART::Scene* _boardScene;		
 		MatrixTransform* _boardTrackerMT;
 		MatrixTransform* _selectorTrackerMT;				
+		osgShadow::ShadowedScene* _boardShadowedScene;
 		ChessBoard _gameBoard;
+
+		CloudParticleSystem* _selectorParticleSystem;
 
 		//Camera* _gameStatusHUD;
 		//osgFX::AnisotropicLighting* _anisotropicLighting;

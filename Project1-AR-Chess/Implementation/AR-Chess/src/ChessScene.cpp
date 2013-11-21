@@ -91,14 +91,14 @@ void ChessScene::setupARTrackers() {
 
 
 void ChessScene::setupBoard() {
-	osgShadow::ShadowedScene* boardShadowedScene = _gameBoard.setupBoard();
+	_boardShadowedScene = _gameBoard.setupBoard();
 	
 	osgShadow::ShadowMap* shadowMap = new osgShadow::ShadowMap();
 	int textureMapResolution = 1024 * 10;
 	shadowMap->setTextureSize(osg::Vec2s(textureMapResolution, textureMapResolution));
 	//shadowMap->setTextureUnit(1);
 	shadowMap->setLight(_mainLightSource->getLight());
-	boardShadowedScene->setShadowTechnique(shadowMap);
+	_boardShadowedScene->setShadowTechnique(shadowMap);
 
 	/*osg::LightModel* lightModel = new osg::LightModel();
 	lightModel->setColorControl(osg::LightModel::ColorControl::SEPARATE_SPECULAR_COLOR);
@@ -118,11 +118,13 @@ void ChessScene::setupBoard() {
 	_anisotropicLighting->addChild(boardShadowedScene);
 	_boardTrackerMT->addChild(_anisotropicLighting);*/
 
-	_boardTrackerMT->addChild(boardShadowedScene);
+	_boardTrackerMT->addChild(_boardShadowedScene);
 }
 
 
 void ChessScene::setupSelector() {
+	_selectorParticleSystem = new CloudParticleSystem(_boardScene, _boardTrackerMT, _selectorTrackerMT);
+	_boardShadowedScene->addChild(_selectorParticleSystem);
 }
 
 
