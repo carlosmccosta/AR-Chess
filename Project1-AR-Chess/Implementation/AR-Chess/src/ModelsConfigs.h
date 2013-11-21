@@ -52,6 +52,14 @@
 #define PLAYER_STATUS_TEXT_LEFT_OFFSET 4
 #define PLAYER_STATUS_TEXT_UP_OFFSET 0.25
 
+#define AUXILIARY_SELECTORS_IMAGE_SCALE 0.8
+#define AUXILIARY_SELECTORS_X_OFFSET 6
+#define AUXILIARY_SELECTORS_Y_OFFSET -4
+#define NEW_GAME_H_H "images/new_game_h_h.png"
+#define NEW_GAME_H_H_SELECTED "images/new_game_h_h_selected.png"
+#define NEW_GAME_H_M "images/new_game_h_m.png"
+#define NEW_GAME_H_M_SELECTED "images/new_game_h_m_selected.png"
+
 #define TEXT_FONT "fonts/Harrington.ttf"
 
 #define RECEIVE_SHADOW_MASK 0x1

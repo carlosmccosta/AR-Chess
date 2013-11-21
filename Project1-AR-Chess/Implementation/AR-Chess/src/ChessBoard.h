@@ -46,9 +46,14 @@ class ChessBoard : public osg::Referenced {
 		osgShadow::ShadowedScene* setupBoard();
 		void setupPlayersTimers();
 		void setupPlayerTimer(Geode* backgroundImage, Text3D* timerText, float rotationAngle, float playersStatusXOffsetToBoardBorder);
+		MatrixTransform* setupAuxiliarySelector(Vec2i position, Image* image,
+			Vec3 translateOffset = Vec3(AUXILIARY_SELECTORS_X_OFFSET, AUXILIARY_SELECTORS_Y_OFFSET, 0),
+			float rotationAngle = 0,
+			Vec3 scale = Vec3(AUXILIARY_SELECTORS_IMAGE_SCALE, AUXILIARY_SELECTORS_IMAGE_SCALE, AUXILIARY_SELECTORS_IMAGE_SCALE));
 
 		bool updateBoard(Vec2i selectorBoardPosition);
 		void updatePlayerStatus(Text3D* makeActive, Text3D* makeInactive);
+		void clearPlayersPieces();
 		void clearHighlights();
 		void clearSelections();
 		void clearPossibleMoves();
@@ -64,6 +69,7 @@ class ChessBoard : public osg::Referenced {
 		void removeChessPieceWithAnimation(Vec2 boardPositionOfPieceToRemove, ChessPieceColor chessPieceColor);
 
 		bool isPositionValid(int position);
+		bool isPositionAnAuxiliarySelector(Vec2i position);
 		ChessPiece* getChessPieceAtBoardPosition(int xBoardPosition, int yBoardPosition, ChessPieceColor chessPieceColor);
 
 
@@ -84,6 +90,7 @@ class ChessBoard : public osg::Referenced {
 		Vec2i _lastSelectorBoardPosition;
 		Font3D* _font3D;
 		
+		Group* _playersPieces;
 		Group* _playersTimers;
 		Group* _boardSquareSelectorHighlights;
 		Group* _boardSquareSelections;
@@ -101,5 +108,10 @@ class ChessBoard : public osg::Referenced {
 		Geode* _blackPlayerStatus;
 		Text3D* _whitePlayerGameTimerText;		
 		Text3D* _blackPlayerGameTimerText;
+
+		Image* _newGameHH;
+		Image* _newGameHHSelected;
+		Image* _newGameHM;
+		Image* _newGameHMSelected;
 };
 
