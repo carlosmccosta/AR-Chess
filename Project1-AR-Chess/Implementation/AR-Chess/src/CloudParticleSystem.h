@@ -77,15 +77,15 @@ class CloudParticleSystem : public Group {
 			string particleTextureFile = TRACKER_SELECTOR_PARTICLE,
 			bool useEmissiveParticles = true,
 			bool useLightingInParticles = true,
-			rangef particleSizeRange = rangef(4.0f, 16.0f),
-			double particleLifetimeInSeconds = 1.0,
+			rangef particleSizeRange = rangef(2.0f, 14.0f),
+			double particleLifetimeInSeconds = 1.5,
 			float particleMass = 0.02f,
 			rangev4 particleColorRange = rangev4(Vec4(0.5f, 0.5f, 0.5f, 0.8f), Vec4(0, 0, 0, 0.2f)),
-			Vec2 particleCreationRateRange = Vec2(70, 100),
-			Vec2 particleRadialShooterThetaRange = Vec2(0, osg::DegreesToRadians(25.0)),
-			Vec2 particleRadialInitialSpeedRange = Vec2(4, 5),
-			Vec3 particleFluidFrictionWind = Vec3(0, 0, 0),
-			float particleGravityAcceleration = 0.4);
+			Vec2 particleCreationRateRange = Vec2(75, 150),
+			Vec2 particleRadialShooterThetaRange = Vec2(0, osg::DegreesToRadians(30.0)),
+			Vec2 particleRadialInitialSpeedRange = Vec2(0, 20),
+			Vec3 particleFluidFrictionWind = Vec3(0, 0, 50),
+			float particleGravityAcceleration = 0.8);
 		virtual ~CloudParticleSystem();
 
 	private:

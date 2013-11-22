@@ -44,6 +44,7 @@ class ChessPiece : public osg::Referenced {
 		float getPieceModelSize(ChessPieceType chessPieceType);		
 
 		void changePosition(int xPosition, int yPosition);
+		void resetPosition();
 		void removePieceFromBoard();
 
 		static ChessPieceColor getOpponentChessPieceColor(ChessPieceColor chessPieceColor);

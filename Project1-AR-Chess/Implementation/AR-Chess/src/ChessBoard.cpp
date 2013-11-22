@@ -61,16 +61,21 @@ ChessBoard::ChessBoard() {
 
 	// new game h vs h selectors
 	_boardShadowedScene->addChild(setupAuxiliarySelector(Vec2i(5, -4), _newGameHH));
-	_boardShadowedScene->addChild(setupAuxiliarySelector(Vec2i(-5, 4), _newGameHH, Vec3(-AUXILIARY_SELECTORS_X_OFFSET, -AUXILIARY_SELECTORS_Y_OFFSET, 0), osg::PI));
+	_boardShadowedScene->addChild(setupAuxiliarySelector(Vec2i(-5, 4), _newGameHH, Vec3(-AUXILIARY_SELECTORS_X_OFFSET, -AUXILIARY_SELECTORS_Y_OFFSET, AUXILIARY_SELECTORS_Z_OFFSET), osg::PI));
 	_boardShadowedScene->addChild(setupAuxiliarySelector(Vec2i(6, -4), _newGameHM));
-	_boardShadowedScene->addChild(setupAuxiliarySelector(Vec2i(-6, 4), _newGameHM, Vec3(-AUXILIARY_SELECTORS_X_OFFSET, -AUXILIARY_SELECTORS_Y_OFFSET, 0), osg::PI));
+	_boardShadowedScene->addChild(setupAuxiliarySelector(Vec2i(-6, 4), _newGameHM, Vec3(-AUXILIARY_SELECTORS_X_OFFSET, -AUXILIARY_SELECTORS_Y_OFFSET, AUXILIARY_SELECTORS_Z_OFFSET), osg::PI));
 
 	_playersPieces = new Group();
 	_playersTimers = new Group();
 	_boardSquareSelectorHighlights = new Group();
 	_boardSquareSelections = new Group();	
 	
+	setupBoardPieces();
 	setupPlayersTimers();
+
+	_selectorTimer = new ElapsedTime();
+	_animationDelayBetweenMoves = new ElapsedTime();
+	_animationInProgress = false;
 
 	_boardShadowedScene->addChild(boardModelMT);
 	_boardShadowedScene->addChild(_playersPieces);
@@ -83,25 +88,41 @@ ChessBoard::~ChessBoard() {}
 
 
 osgShadow::ShadowedScene* ChessBoard::setupBoard() {
-	// reset board
-	_whiteChessPieces.clear();
-	_blackChessPieces.clear();
-	clearPlayersPieces();
-
 	_currentPlayer = WHITE;
+	_pieceToMove = NULL;
 	_moveOriginPosition = Vec2(0, 0);
 	_moveDestinationPosition = Vec2(0, 0);
 	
-	_selectorTimer = new ElapsedTime();
 	_whitePlayerGameTimer = NULL;
 	_blackPlayerGameTimer = NULL;	
-	_animationInProgress = false;
-	_animationDelayBetweenMoves = new ElapsedTime();
 	_whitePlayerGameTimerD = 0;
-	_blackPlayerGameTimerD = 0;
+	_blackPlayerGameTimerD = 0;	
 
-	updatePlayerStatus(_whitePlayerGameTimerText, _blackPlayerGameTimerText);
-	
+	updatePlayerStatus(_whitePlayerGameTimerText, _blackPlayerGameTimerText);	
+
+	return _boardShadowedScene;
+}
+
+osgShadow::ShadowedScene* ChessBoard::resetBoard() {
+	// move pieces to their original position
+	for (size_t whitePiecePos = 0; whitePiecePos < _whiteChessPieces.size(); ++whitePiecePos) {
+		_whiteChessPieces[whitePiecePos]->resetPosition();
+	}
+
+	for (size_t blackPiecePos = 0; blackPiecePos < _blackChessPieces.size(); ++blackPiecePos) {
+		_blackChessPieces[blackPiecePos]->resetPosition();
+	}
+
+	clearSelections();
+	_animationDelayBetweenMoves->reset();
+	_whitePlayerGameTimerText->setText(ChessUtils::formatSecondsToDate(0));
+	_blackPlayerGameTimerText->setText(ChessUtils::formatSecondsToDate(0));
+
+	return setupBoard();
+}
+
+
+void ChessBoard::setupBoardPieces() {
 	//setup initial positions
 
 	// kings
@@ -146,31 +167,25 @@ osgShadow::ShadowedScene* ChessBoard::setupBoard() {
 
 	for (size_t blackPiecePos = 0; blackPiecePos < _blackChessPieces.size(); ++blackPiecePos) {
 		_playersPieces->addChild(_blackChessPieces[blackPiecePos]->getPieceMatrixTransform());
-	}	
-
-	return _boardShadowedScene;
+	}
 }
 
 
 void ChessBoard::setupPlayersTimers() {
-	float playersStatusXOffsetToBoardBorder = 4 * BOARD_SQUARE_SIZE + PLAYER_STATUS_BOARD_OFFSET;
-	_whitePlayerStatus = ChessUtils::createRectangleWithTexture(
-		Vec3(-PLAYER_STATUS_TEXT_LEFT_OFFSET, -PLAYER_STATUS_TEXT_UP_OFFSET, BOARD_OVERLAYS_HEIGHT_OFFSET),
-		osgDB::readImageFile(WHITE_PLAYER_STATUS_IMG), PLAYER_STATUS_WIDTH, PLAYER_STATUS_HEIGHT);
+	float playersStatusXOffsetToBoardBorder = 4 * BOARD_SQUARE_SIZE + PLAYER_STATUS_BOARD_BORDER_OFFSET;
+	_whitePlayerStatus = ChessUtils::createRectangleWithTexture(Vec3(0, 0, 0), osgDB::readImageFile(WHITE_PLAYER_STATUS_IMG), PLAYER_STATUS_WIDTH, PLAYER_STATUS_HEIGHT);
+	_blackPlayerStatus = ChessUtils::createRectangleWithTexture(Vec3(0, 0, 0), osgDB::readImageFile(BLACK_PLAYER_STATUS_IMG), PLAYER_STATUS_WIDTH, PLAYER_STATUS_HEIGHT);
 
-	_blackPlayerStatus = ChessUtils::createRectangleWithTexture(
-		Vec3(-PLAYER_STATUS_TEXT_LEFT_OFFSET, -PLAYER_STATUS_TEXT_UP_OFFSET, BOARD_OVERLAYS_HEIGHT_OFFSET),
-		osgDB::readImageFile(BLACK_PLAYER_STATUS_IMG), PLAYER_STATUS_WIDTH, PLAYER_STATUS_HEIGHT);
+	Vec3 textPosition = Vec3(PLAYER_STATUS_TEXT_LEFT_OFFSET, PLAYER_STATUS_TEXT_UP_OFFSET, PLAYER_STATUS_TEXT_Z_OFFSET);
+	_whitePlayerGameTimerText = ChessUtils::createText3D(ChessUtils::formatSecondsToDate(0), _font3D, textPosition, PLAYER_STATUS_TEXT_SIZE, PLAYER_STATUS_TEXT_DEPTH);
+	_blackPlayerGameTimerText = ChessUtils::createText3D(ChessUtils::formatSecondsToDate(0), _font3D, textPosition, PLAYER_STATUS_TEXT_SIZE, PLAYER_STATUS_TEXT_DEPTH);
 
-	_whitePlayerGameTimerText = ChessUtils::createText3D(ChessUtils::formatSecondsToDate(0), _font3D);
-	_blackPlayerGameTimerText = ChessUtils::createText3D(ChessUtils::formatSecondsToDate(0), _font3D);
-
-	setupPlayerTimer(_whitePlayerStatus, _whitePlayerGameTimerText, osg::PI_2, -playersStatusXOffsetToBoardBorder);
-	setupPlayerTimer(_blackPlayerStatus, _blackPlayerGameTimerText, -osg::PI_2, playersStatusXOffsetToBoardBorder);
+	setupPlayerTimer(_whitePlayerStatus, _whitePlayerGameTimerText, osg::PI_2, Vec3(-playersStatusXOffsetToBoardBorder, 0, PLAYER_STATUS_Z_OFFSET));
+	setupPlayerTimer(_blackPlayerStatus, _blackPlayerGameTimerText, -osg::PI_2, Vec3(playersStatusXOffsetToBoardBorder, 0, PLAYER_STATUS_Z_OFFSET));
 }
 
 
-void ChessBoard::setupPlayerTimer(Geode* backgroundImage, Text3D* timerText, float rotationAngle, float playersStatusXOffsetToBoardBorder) {
+void ChessBoard::setupPlayerTimer(Geode* backgroundImage, Text3D* timerText, float rotationAngle, Vec3 playersStatusOffsetToBoardBorder) {
 	MatrixTransform* playerTimerMT = new MatrixTransform();	
 	playerTimerMT->addChild(backgroundImage);
 	
@@ -179,7 +194,7 @@ void ChessBoard::setupPlayerTimer(Geode* backgroundImage, Text3D* timerText, flo
 
 	playerTimerMT->addChild(timerTextGeode);
 	playerTimerMT->postMult(Matrix::rotate(rotationAngle, osg::Z_AXIS));
-	playerTimerMT->postMult(Matrix::translate(playersStatusXOffsetToBoardBorder, 0, 0));
+	playerTimerMT->postMult(Matrix::translate(playersStatusOffsetToBoardBorder));
 	_playersTimers->addChild(playerTimerMT);
 }
 
@@ -207,8 +222,7 @@ bool ChessBoard::updateBoard(Vec2i selectorBoardPosition) {
 			return false;
 		} else {
 			_animationInProgress = false;
-			clearSelections();
-			_currentPlayer = ChessPiece::getOpponentChessPieceColor(_currentPlayer);
+			clearSelections();			
 
 			if (_currentPlayer == WHITE) {
 				updatePlayerStatus(_whitePlayerGameTimerText, _blackPlayerGameTimerText);
@@ -218,28 +232,27 @@ bool ChessBoard::updateBoard(Vec2i selectorBoardPosition) {
 		}
 	}
 
+	// start timers when player moves paddle inside board for first time in the game
+	if (_currentPlayer == WHITE) {
+		if (_whitePlayerGameTimer == NULL) {
+			_whitePlayerGameTimer = new ElapsedTime();
+		}
+
+		_whitePlayerGameTimerText->setText(ChessUtils::formatSecondsToDate(_whitePlayerGameTimerD + _whitePlayerGameTimer->elapsedTime()));
+	}
+
+	if (_currentPlayer == BLACK) {
+		if (_blackPlayerGameTimer == NULL) {
+			_blackPlayerGameTimer = new ElapsedTime();
+		}
+
+		_blackPlayerGameTimerText->setText(ChessUtils::formatSecondsToDate(_blackPlayerGameTimerD + _blackPlayerGameTimer->elapsedTime()));
+	}
+	
+	
 	bool positionIsAnAuxiliarySelector = isPositionAnAuxiliarySelector(selectorBoardPosition);
 
 	if ((isPositionValid(selectorBoardPosition.x()) && isPositionValid(selectorBoardPosition.y())) || positionIsAnAuxiliarySelector) {
-		// start timers when player moves paddle inside board for first time in the game
-		if (_currentPlayer == WHITE) {			
-			if (_whitePlayerGameTimer == NULL) {
-				_whitePlayerGameTimer = new ElapsedTime();
-			}
-
-			_whitePlayerGameTimerText->setText(ChessUtils::formatSecondsToDate(_whitePlayerGameTimerD + _whitePlayerGameTimer->elapsedTime()));
-		}
-
-		if (_currentPlayer == BLACK) {
-			if (_blackPlayerGameTimer == NULL) {
-				_blackPlayerGameTimer = new ElapsedTime();
-			}
-
-			_blackPlayerGameTimerText->setText(ChessUtils::formatSecondsToDate(_blackPlayerGameTimerD + _blackPlayerGameTimer->elapsedTime()));
-		}
-
-
-
 		if (selectorBoardPosition.x() != _lastSelectorBoardPosition.x() || selectorBoardPosition.y() != _lastSelectorBoardPosition.y()) {
 			// selector in new board position
 			clearHighlights();
@@ -254,9 +267,9 @@ bool ChessBoard::updateBoard(Vec2i selectorBoardPosition) {
 				if (positionIsAnAuxiliarySelector) {
 					if ((selectorBoardPosition.x() == 5 && selectorBoardPosition.y() == -4) ||
 						(selectorBoardPosition.x() == -5 && selectorBoardPosition.y() == 4)) {
-						setupBoard();
-						clearSelections();
-					}					
+						resetBoard();						
+						_animationInProgress = true;
+					}
 					_selectorTimer->reset();
 					return true;
 				}
@@ -321,6 +334,8 @@ bool ChessBoard::updateBoard(Vec2i selectorBoardPosition) {
 						_animationDelayBetweenMoves->reset();
 						_animationInProgress = true;
 
+						_currentPlayer = ChessPiece::getOpponentChessPieceColor(_currentPlayer);
+
 						return true;
 					}
 				}
@@ -371,19 +386,19 @@ bool ChessBoard::hightLighPosition(int xBoardPosition, int yBoardPosition) {
 	if (positionAnAuxiliarySelector) {
 		// new game h vs h selectors
 		if (xBoardPosition == 5 && yBoardPosition == -4) {
-			_boardSquareSelectorHighlights->addChild(setupAuxiliarySelector(Vec2i(5, -4), _newGameHHSelected, Vec3(AUXILIARY_SELECTORS_X_OFFSET, AUXILIARY_SELECTORS_Y_OFFSET, BOARD_OVERLAYS_HEIGHT_OFFSET)));			
+			_boardSquareSelectorHighlights->addChild(setupAuxiliarySelector(Vec2i(5, -4), _newGameHHSelected, Vec3(AUXILIARY_SELECTORS_X_OFFSET, AUXILIARY_SELECTORS_Y_OFFSET, AUXILIARY_SELECTORS_HIGHLIGHT_Z_OFFSET)));
 		}
 
 		if (xBoardPosition == -5 && yBoardPosition == 4) {
-			_boardSquareSelectorHighlights->addChild(setupAuxiliarySelector(Vec2i(-5, 4), _newGameHHSelected, Vec3(-AUXILIARY_SELECTORS_X_OFFSET, -AUXILIARY_SELECTORS_Y_OFFSET, BOARD_OVERLAYS_HEIGHT_OFFSET), osg::PI));			
+			_boardSquareSelectorHighlights->addChild(setupAuxiliarySelector(Vec2i(-5, 4), _newGameHHSelected, Vec3(-AUXILIARY_SELECTORS_X_OFFSET, -AUXILIARY_SELECTORS_Y_OFFSET, AUXILIARY_SELECTORS_HIGHLIGHT_Z_OFFSET), osg::PI));
 		}
 
 		if (xBoardPosition == 6 && yBoardPosition == -4) {
-			_boardSquareSelectorHighlights->addChild(setupAuxiliarySelector(Vec2i(6, -4), _newGameHMSelected, Vec3(AUXILIARY_SELECTORS_X_OFFSET, AUXILIARY_SELECTORS_Y_OFFSET, BOARD_OVERLAYS_HEIGHT_OFFSET)));			
+			_boardSquareSelectorHighlights->addChild(setupAuxiliarySelector(Vec2i(6, -4), _newGameHMSelected, Vec3(AUXILIARY_SELECTORS_X_OFFSET, AUXILIARY_SELECTORS_Y_OFFSET, AUXILIARY_SELECTORS_HIGHLIGHT_Z_OFFSET)));
 		}
 
 		if (xBoardPosition == -6 && yBoardPosition == 4) {
-			_boardSquareSelectorHighlights->addChild(setupAuxiliarySelector(Vec2i(-6, 4), _newGameHMSelected, Vec3(-AUXILIARY_SELECTORS_X_OFFSET, -AUXILIARY_SELECTORS_Y_OFFSET, BOARD_OVERLAYS_HEIGHT_OFFSET), osg::PI));			
+			_boardSquareSelectorHighlights->addChild(setupAuxiliarySelector(Vec2i(-6, 4), _newGameHMSelected, Vec3(-AUXILIARY_SELECTORS_X_OFFSET, -AUXILIARY_SELECTORS_Y_OFFSET, AUXILIARY_SELECTORS_HIGHLIGHT_Z_OFFSET), osg::PI));
 		}
 
 		return true;
@@ -406,7 +421,16 @@ ChessPiece* ChessBoard::selectPosition(int xBoardPosition, int yBoardPosition, C
 	if (!selectOnlyIfExistsPiece || (selectOnlyIfExistsPiece && chessPieceAtPosition != NULL)) {
 		Vec3f scenePosition = ChessUtils::computePieceScenePosition(xBoardPosition, yBoardPosition);
 		scenePosition.z() = BOARD_OVERLAYS_HEIGHT_OFFSET;
-		_boardSquareSelections->addChild(ChessUtils::createRectangleWithTexture(scenePosition, new Image(*_paddleSelectedImage)));
+
+		MatrixTransform* selectionMT = new MatrixTransform();
+		selectionMT->addChild(ChessUtils::createRectangleWithTexture(Vec3(0,0,0), new Image(*_paddleSelectedImage)));
+
+		if (chessPieceColor == BLACK) {
+			selectionMT->postMult(Matrix::rotate(osg::PI, osg::Z_AXIS));
+		}
+
+		selectionMT->postMult(Matrix::translate(scenePosition));
+		_boardSquareSelections->addChild(selectionMT);
 	}
 
 	return chessPieceAtPosition;

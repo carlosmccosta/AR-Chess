@@ -238,7 +238,7 @@ Text3D* ChessUtils::createText3D(const string& content, Font3D* font3D, const Ve
 	text->setFont(font3D);
 	text->setCharacterSize(size);
 	text->setCharacterDepth(depth);
-	text->setAlignment(osgText::TextBase::CENTER_CENTER);
+	text->setAlignment(osgText::TextBase::LEFT_CENTER);
 	text->setAxisAlignment(osgText::TextBase::XY_PLANE);
 	text->setPosition(position);
 	text->setText(content);	

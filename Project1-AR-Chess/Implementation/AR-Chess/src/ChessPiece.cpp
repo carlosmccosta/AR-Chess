@@ -128,6 +128,12 @@ void ChessPiece::changePosition(int xPosition, int yPosition) {
 	_pieceCurrentPosition = finalPieceScenePosition;
 }
 
+
+void ChessPiece::resetPosition() {
+	changePosition(_xInitialPosition, _yInitialPosition);
+}
+
+
 void ChessPiece::removePieceFromBoard() {
 	_xPosition = 0;
 	_yPosition = 0;

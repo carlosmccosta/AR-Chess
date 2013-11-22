@@ -9,7 +9,7 @@ EmitterUpdateCallback::EmitterUpdateCallback(PointPlacer* pointPlacer, MatrixTra
 
 void EmitterUpdateCallback::operator() (Node* node, NodeVisitor* nodeVisitor) {
 	Vec3 offset = _selectorTrackerMT->getMatrix().getTrans() - _boardTrackerMT->getMatrix().getTrans();
-	offset.z() += TRACKER_SELECTOR_PARTICLE_HEIGHT_OFFSET;
+	offset.z() = TRACKER_SELECTOR_PARTICLE_HEIGHT_OFFSET;
 	_pointPlacer->setCenter(offset);
 
 	traverse(node, nodeVisitor);

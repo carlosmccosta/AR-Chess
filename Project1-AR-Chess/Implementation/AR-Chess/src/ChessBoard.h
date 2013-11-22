@@ -44,8 +44,10 @@ class ChessBoard : public osg::Referenced {
 		ChessBoard();
 		virtual ~ChessBoard();
 		osgShadow::ShadowedScene* setupBoard();
+		osgShadow::ShadowedScene* resetBoard();
+		void setupBoardPieces();
 		void setupPlayersTimers();
-		void setupPlayerTimer(Geode* backgroundImage, Text3D* timerText, float rotationAngle, float playersStatusXOffsetToBoardBorder);
+		void setupPlayerTimer(Geode* backgroundImage, Text3D* timerText, float rotationAngle, Vec3 playersStatusOffsetToBoardBorder);
 		MatrixTransform* setupAuxiliarySelector(Vec2i position, Image* image,
 			Vec3 translateOffset = Vec3(AUXILIARY_SELECTORS_X_OFFSET, AUXILIARY_SELECTORS_Y_OFFSET, 0),
 			float rotationAngle = 0,
