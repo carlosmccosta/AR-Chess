@@ -73,6 +73,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\ChessMoveHistory.cpp" />
     <ClCompile Include="src\CloudParticleSystem.cpp" />
     <ClCompile Include="src\ChessBoard.cpp" />
     <ClCompile Include="src\ChessPiece.cpp" />
@@ -81,6 +82,7 @@
     <ClCompile Include="src\ChessUtils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\ChessMoveHistory.h" />
     <ClInclude Include="src\CloudParticleSystem.h" />
     <ClInclude Include="src\ChessBoard.h" />
     <ClInclude Include="src\ChessPiece.h" />

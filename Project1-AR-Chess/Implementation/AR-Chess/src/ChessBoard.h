@@ -9,7 +9,6 @@
 #include <osgShadow/ShadowedScene>
 #include <osgShadow/ShadowMap>
 
-
 // std includes
 #include <vector>
 
@@ -17,6 +16,7 @@
 #include "ChessUtils.h"
 #include "ChessPiece.h"
 #include "ModelsConfigs.h"
+#include "ChessMoveHistory.h"
 
 
 // namespace specific imports to avoid namespace pollution
@@ -33,9 +33,23 @@ using osg::ElapsedTime;
 
 enum MovePositionStatus {
 	POSITION_AVAILABLE,
-	POSITION_WITH_OPONENT_PIECE,
+	POSITION_WITH_OPPONENT_PIECE,
 	POSITION_WITH_PLAYER_PIECE,
 	SAME_POSITION_AS_ORIGIN
+};
+
+enum AuxiliarySelector {
+	SELECTOR_NEW_GAME_H_H_WHITE_SIDE,
+	SELECTOR_NEW_GAME_H_H_BLACK_SIDE,
+	SELECTOR_NEW_GAME_H_C_WHITE_SIDE,
+	SELECTOR_NEW_GAME_H_C_BLACK_SIDE,
+	SELECTOR_NEW_GAME_C_C_WHITE_SIDE,
+	SELECTOR_NEW_GAME_C_C_BLACK_SIDE,
+	SELECTOR_PREVIOUS_MOVE_WHITE_SIDE,
+	SELECTOR_PREVIOUS_MOVE_BLACK_SIDE,
+	SELECTOR_NEXT_MOVE_WHITE_SIDE,
+	SELECTOR_NEXT_MOVE_BLACK_SIDE,
+	SELECTOR_INVALID
 };
 
 
@@ -53,15 +67,20 @@ class ChessBoard : public osg::Referenced {
 			float rotationAngle = 0,
 			Vec3 scale = Vec3(AUXILIARY_SELECTORS_IMAGE_SCALE, AUXILIARY_SELECTORS_IMAGE_SCALE, AUXILIARY_SELECTORS_IMAGE_SCALE));
 
-		bool updateBoard(Vec2i selectorBoardPosition);
+		bool updateBoard(Vec2i selectorBoardPosition);						
+		void updatePlayersGameTimers();
+		void processAuxiliarySelector(AuxiliarySelector auxiliarySelector);
+		bool processFirstSelection(Vec2i selectorBoardPosition, AuxiliarySelector auxiliarySelector = SELECTOR_INVALID);
+		bool processSecondSelection(Vec2i selectorBoardPosition, AuxiliarySelector auxiliarySelector = SELECTOR_INVALID);
+
 		void updatePlayerStatus(Text3D* makeActive, Text3D* makeInactive);
 		void clearPlayersPieces();
 		void clearHighlights();
 		void clearSelections();
 		void clearPossibleMoves();
 
-		bool hightLighPosition(int xBoardPosition, int yBoardPosition);		
-		ChessPiece* selectPosition(int xBoardPosition, int yBoardPosition, ChessPieceColor chessPieceColor, bool selectOnlyIfExistsPiece = false);
+		bool hightLighPosition(int xBoardPosition, int yBoardPosition, AuxiliarySelector auxiliarySelector = SELECTOR_INVALID);
+		ChessPiece* selectPosition(int xBoardPosition, int yBoardPosition, ChessPieceColor chessPieceColor, bool selectOnlyIfExistsPiece = false, AuxiliarySelector auxiliarySelector = SELECTOR_INVALID);
 		bool showPossibleMoves(ChessPiece* chessPiece);
 		Vec2Array* computePossibleMovePositions(ChessPiece* chessPiece);
 		bool updatePossibleMoves(int xBoardPosition, int yBoardPosition, ChessPieceColor chessPieceColor, Vec2Array* possibleMoves);		
@@ -71,13 +90,14 @@ class ChessBoard : public osg::Referenced {
 		void removeChessPieceWithAnimation(Vec2 boardPositionOfPieceToRemove, ChessPieceColor chessPieceColor);
 
 		bool isPositionValid(int position);
-		bool isPositionAnAuxiliarySelector(Vec2i position);
+		AuxiliarySelector isPositionAnAuxiliarySelector(Vec2i position);
 		ChessPiece* getChessPieceAtBoardPosition(int xBoardPosition, int yBoardPosition, ChessPieceColor chessPieceColor);
 
 
 	private:
 		vector<ChessPiece*> _whiteChessPieces;
 		vector<ChessPiece*> _blackChessPieces;
+		vector<ChessMoveHistory*> _pieceMovesHistory;
 		ChessPieceColor _currentPlayer;
 		ChessPiece* _pieceToMove;
 		Vec2 _moveOriginPosition;
@@ -113,7 +133,9 @@ class ChessBoard : public osg::Referenced {
 
 		Image* _newGameHH;
 		Image* _newGameHHSelected;
-		Image* _newGameHM;
-		Image* _newGameHMSelected;
+		Image* _newGameHC;
+		Image* _newGameHCSelected;
+		Image* _newGameCC;
+		Image* _newGameCCSelected;
 };
 

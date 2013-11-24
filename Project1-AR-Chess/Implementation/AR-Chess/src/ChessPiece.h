@@ -49,7 +49,7 @@ class ChessPiece : public osg::Referenced {
 
 		static ChessPieceColor getOpponentChessPieceColor(ChessPieceColor chessPieceColor);
 
-		// ------------------------------------------------------------------------------  <gets / sets> -------------------------------------------------------------------------------
+		// ------------------------------------------------------------------------------  <gets | sets> -------------------------------------------------------------------------------
 		ChessPieceType getChessPieceType() const { return _chessPieceType; }
 		void setChessPieceType(ChessPieceType val) { _chessPieceType = val; }
 		ChessPieceColor getChessPieceColor() const { return _chessPieceColor; }
@@ -62,14 +62,14 @@ class ChessPiece : public osg::Referenced {
 		void setPiecePlayable(bool val) { _piecePlayable = val; }
 		MatrixTransform* getPieceMatrixTransform() const { return _pieceMatrixTransform; }
 		void setPieceMatrixTransform(MatrixTransform* val) { _pieceMatrixTransform = val; }
-		// ------------------------------------------------------------------------------  </gets / sets> ------------------------------------------------------------------------------
+		// ------------------------------------------------------------------------------  </gets | sets> ------------------------------------------------------------------------------
 
 	private:
 		ChessPieceType _chessPieceType;		
 		ChessPieceColor _chessPieceColor;		
 		int _xPosition;
 		int _yPosition;
-		Vec3f _pieceCurrentPosition;
+		Vec3f _pieceCurrentScenePosition;
 		int _xInitialPosition;
 		int _yInitialPosition;
 		bool _piecePlayable;		

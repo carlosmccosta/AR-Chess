@@ -13,7 +13,7 @@ ChessPiece::ChessPiece(ChessPieceType chessPieceType, ChessPieceColor chessPiece
 	// necessary parameters to position piece in board
 	string name = getPieceModelPath(chessPieceType, chessPieceColor);
 	float modelSize = getPieceModelSize(chessPieceType);
-	_pieceCurrentPosition = ChessUtils::computePieceScenePosition(xPosition, yPosition);
+	_pieceCurrentScenePosition = ChessUtils::computePieceScenePosition(xPosition, yPosition);
 	double rotationAngle = 0;
 	Vec3f rotationAxis = Vec3f(0.0, 0.0, 1.0);
 	
@@ -26,7 +26,7 @@ ChessPiece::ChessPiece(ChessPieceType chessPieceType, ChessPieceColor chessPiece
 		rotationAngle = osg::PI;
 	}
 
-	_pieceMatrixTransform = ChessUtils::loadOSGModel(name, modelSize, material, false, _pieceCurrentPosition, rotationAngle, rotationAxis);
+	_pieceMatrixTransform = ChessUtils::loadOSGModel(name, modelSize, material, false, _pieceCurrentScenePosition, rotationAngle, rotationAxis);
 	_pieceMatrixTransform->setNodeMask(CAST_SHADOW_MASK);
 }
 
@@ -123,9 +123,9 @@ void ChessPiece::changePosition(int xPosition, int yPosition) {
 
 	Vec3f finalPieceScenePosition = ChessUtils::computePieceScenePosition(xPosition, yPosition);
 
-	osg::AnimationPathCallback* animationPathCallback = new osg::AnimationPathCallback(ChessUtils::createChessPieceAnimationPath(_pieceCurrentPosition, finalPieceScenePosition));
+	osg::AnimationPathCallback* animationPathCallback = new osg::AnimationPathCallback(ChessUtils::createChessPieceAnimationPath(_pieceCurrentScenePosition, finalPieceScenePosition));
 	_pieceMatrixTransform->setUpdateCallback(animationPathCallback);
-	_pieceCurrentPosition = finalPieceScenePosition;
+	_pieceCurrentScenePosition = finalPieceScenePosition;
 }
 
 
@@ -135,8 +135,8 @@ void ChessPiece::resetPosition() {
 
 
 void ChessPiece::removePieceFromBoard() {
-	_xPosition = 0;
-	_yPosition = 0;
+	/*_xPosition = 0;
+	_yPosition = 0;*/
 	_piecePlayable = false;
 
 	Vec3f finalPieceScenePosition = ChessUtils::computePieceScenePosition(_yInitialPosition, -_xInitialPosition);
@@ -154,9 +154,9 @@ void ChessPiece::removePieceFromBoard() {
 
 	finalPieceScenePosition.y() *= BOARD_SQUARE_SHRINK_RATIO_FOR_OUTSIDE_PIECES;
 
-	osg::AnimationPathCallback* animationPathCallback = new osg::AnimationPathCallback(ChessUtils::createChessPieceAnimationPath(_pieceCurrentPosition, finalPieceScenePosition, -osg::PI_2));
+	osg::AnimationPathCallback* animationPathCallback = new osg::AnimationPathCallback(ChessUtils::createChessPieceAnimationPath(_pieceCurrentScenePosition, finalPieceScenePosition, -osg::PI_2));
 	_pieceMatrixTransform->setUpdateCallback(animationPathCallback);
-	_pieceCurrentPosition = finalPieceScenePosition;
+	_pieceCurrentScenePosition = finalPieceScenePosition;
 }
 
 

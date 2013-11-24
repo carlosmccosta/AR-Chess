@@ -58,18 +58,22 @@
 #define PLAYER_STATUS_TEXT_Z_OFFSET 0
 #define PLAYER_STATUS_TEXT_SIZE 7
 #define PLAYER_STATUS_TEXT_DEPTH 1
+#define PLAYER_STATUS_TEXT_ACTIVE_COLOR Vec4(0.9, 0.8, 0.05, 0.8)
+#define PLAYER_STATUS_TEXT_INACTIVE_COLOR Vec4(0.4, 0.4, 0.4, 0.8)
 
-#define AUXILIARY_SELECTORS_IMAGE_SCALE 0.9
+#define TEXT_FONT "fonts/Harrington.ttf"
+
+#define AUXILIARY_SELECTORS_IMAGE_SCALE 1.0
 #define AUXILIARY_SELECTORS_X_OFFSET 6
 #define AUXILIARY_SELECTORS_Y_OFFSET 0
 #define AUXILIARY_SELECTORS_Z_OFFSET 0.01
 #define AUXILIARY_SELECTORS_HIGHLIGHT_Z_OFFSET 0.015
 #define NEW_GAME_H_H "images/new_game_h_h.png"
 #define NEW_GAME_H_H_SELECTED "images/new_game_h_h_selected.png"
-#define NEW_GAME_H_M "images/new_game_h_m.png"
-#define NEW_GAME_H_M_SELECTED "images/new_game_h_m_selected.png"
-
-#define TEXT_FONT "fonts/Harrington.ttf"
+#define NEW_GAME_H_C "images/new_game_h_c.png"
+#define NEW_GAME_H_C_SELECTED "images/new_game_h_c_selected.png"
+#define NEW_GAME_C_C "images/new_game_c_c.png"
+#define NEW_GAME_C_C_SELECTED "images/new_game_c_c_selected.png"
 
 #define RECEIVE_SHADOW_MASK 0x1
 #define CAST_SHADOW_MASK 0x2
