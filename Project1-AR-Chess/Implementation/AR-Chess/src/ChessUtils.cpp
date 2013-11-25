@@ -49,7 +49,7 @@ Vec2i ChessUtils::computePieceBoardPosition(Vec3 scenePosition) {
 
 MatrixTransform* ChessUtils::loadOSGModel(string name, float modelSize, Material* material, bool overrideMaterial,
 	Vec3 modelCenterShift, double rotationAngle, Vec3 rotationAxis,
-	float xModelCenterOffsetPercentage, float yModelCenterOffsetPercentage, float zModelCenterOffsetPercentage) {
+	Vec3 modelCenterOffsetPercentage) {
 	// create a new node by reading in model from file
 	Node* modelNode = osgDB::readNodeFile(name);
 	if (modelNode != NULL) {
@@ -81,9 +81,9 @@ MatrixTransform* ChessUtils::loadOSGModel(string name, float modelSize, Material
 		unitTransform->accept(cbVisitor);
 		osg::BoundingBox boundingBox = cbVisitor.getBoundingBox();
 				
-		float modelXOffset = (boundingBox.xMax() - boundingBox.xMin()) * xModelCenterOffsetPercentage;
-		float modelYOffset = (boundingBox.yMax() - boundingBox.yMin()) * yModelCenterOffsetPercentage;
-		float modelZOffset = (boundingBox.zMax() - boundingBox.zMin()) * zModelCenterOffsetPercentage;
+		float modelXOffset = (boundingBox.xMax() - boundingBox.xMin()) * modelCenterOffsetPercentage.x();
+		float modelYOffset = (boundingBox.yMax() - boundingBox.yMin()) * modelCenterOffsetPercentage.y();
+		float modelZOffset = (boundingBox.zMax() - boundingBox.zMin()) * modelCenterOffsetPercentage.z();
 		unitTransform->postMult(Matrix::translate(modelXOffset, modelYOffset, modelZOffset));		
 
 		MatrixTransform* modelPositionTransform = new MatrixTransform();		
@@ -248,7 +248,7 @@ Text3D* ChessUtils::createText3D(const string& content, Font3D* font3D, const Ve
 
 
 
-AnimationPath* ChessUtils::createChessPieceAnimationPath(Vec3f initialPosition, Vec3f finalPosition, float rotationAngle, Vec3f rotationAxis, float pieceTravelSpeed, size_t numberSamplesInPath) {
+AnimationPath* ChessUtils::createChessPieceMoveAnimationPath(Vec3f initialPosition, Vec3f finalPosition, float rotationAngle, Vec3f rotationAxis, float pieceTravelSpeed, size_t numberSamplesInPath) {
 	AnimationPath* animationPath = new AnimationPath();
 	animationPath->setLoopMode(osg::AnimationPath::NO_LOOPING);
 
@@ -303,6 +303,26 @@ AnimationPath* ChessUtils::createChessPieceAnimationPath(Vec3f initialPosition, 
 	return animationPath;
 }
 
+
+AnimationPath* ChessUtils::createScaleAnimationPath(Vec3f position, osgAnimation::Motion* scaleEaseMotion, float animationTimeSeconds, size_t numberSamplesInPath) {
+	AnimationPath* animationPath = new AnimationPath();
+	animationPath->setLoopMode(osg::AnimationPath::NO_LOOPING);	
+			
+	float deltaTime = animationTimeSeconds / (float)numberSamplesInPath;	
+	
+	double currenTime = 0;
+	for (size_t currentSamplePosition = 0; currentSamplePosition < numberSamplesInPath; ++currentSamplePosition) {		
+		float scaleFactor = scaleEaseMotion->getValue();
+		scaleEaseMotion->update(deltaTime);
+		
+		Quat rotationQuad(0, osg::Z_AXIS);
+		Vec3d scale(scaleFactor, scaleFactor, scaleFactor);
+		animationPath->insert(currenTime, AnimationPath::ControlPoint(position, rotationQuad, scale));
+		currenTime += deltaTime;
+	}
+
+	return animationPath;
+}
 
 
 string ChessUtils::formatSecondsToDate(double seconds) {

@@ -50,6 +50,14 @@ enum AuxiliarySelector {
 	SELECTOR_PREVIOUS_MOVE_BLACK_SIDE,
 	SELECTOR_NEXT_MOVE_WHITE_SIDE,
 	SELECTOR_NEXT_MOVE_BLACK_SIDE,
+	SELECTOR_PROMOTE_TO_QUEEN_WHITE_SIDE,
+	SELECTOR_PROMOTE_TO_QUEEN_BLACK_SIDE,
+	SELECTOR_PROMOTE_TO_ROOK_WHITE_SIDE,
+	SELECTOR_PROMOTE_TO_ROOK_BLACK_SIDE,
+	SELECTOR_PROMOTE_TO_KNIGHT_WHITE_SIDE,
+	SELECTOR_PROMOTE_TO_KNIGHT_BLACK_SIDE,
+	SELECTOR_PROMOTE_TO_BISHOP_WHITE_SIDE,
+	SELECTOR_PROMOTE_TO_BISHOP_BLACK_SIDE,
 	SELECTOR_INVALID
 };
 
@@ -85,6 +93,7 @@ class ChessBoard : public osg::Referenced {
 		void clearHighlights();
 		void clearSelections();
 		void clearPossibleMoves();
+		void clearPromotionPieces();
 
 		bool hightLighPosition(int xBoardPosition, int yBoardPosition, AuxiliarySelector auxiliarySelector = SELECTOR_INVALID);
 		ChessPiece* selectPosition(int xBoardPosition, int yBoardPosition, ChessPieceColor chessPieceColor, bool selectOnlyIfExistsPiece = false, AuxiliarySelector auxiliarySelector = SELECTOR_INVALID);
@@ -97,6 +106,10 @@ class ChessBoard : public osg::Referenced {
 		ChessPiece* removeChessPieceWithAnimation(Vec2i boardPositionOfPieceToRemove, ChessPieceColor chessPieceColor);
 		bool checkAndPerformCastling(ChessPiece* chessPieceToMove, Vec2i finalPosition);
 		bool isCastlingPossible(ChessPiece* king, Vec2i kingFinalPosition);
+		bool checkAndPerformPromotion(ChessPiece* chessPieceMoved, Vec2i finalPosition);
+		void setupPromotionPiecesOnBoad(ChessPieceColor chessPieceColor);
+		void managePromotionConversionAndReversion();
+		void removePromotionPiecesOnBoad();
 
 		bool goToPreviousMoveInHistory();
 		bool goToNextMoveInHistory();
@@ -111,10 +124,16 @@ class ChessBoard : public osg::Referenced {
 	private:
 		vector<ChessPiece*> _whiteChessPieces;
 		vector<ChessPiece*> _blackChessPieces;
+		vector<ChessPiece*> _promotionChessPieces;
 		vector<ChessMoveHistory*> _pieceMovesHistoryBackwardsStack;
 		vector<ChessMoveHistory*> _pieceMovesHistoryFowardStack;
 		ChessPieceColor _currentPlayer;
 		ChessPiece* _pieceToMove;
+
+		ChessPiece* _pieceToPromote;
+		ChessPieceType _rankOfPromotion;
+		ElapsedTime* _promotionConversionTimer;
+		
 		Vec2i _moveOriginPosition;
 		Vec2i _moveDestinationPosition;
 
@@ -132,10 +151,16 @@ class ChessBoard : public osg::Referenced {
 		Group* _boardSquareSelectorHighlights;
 		Group* _boardSquareSelections;
 		Group* _boardSquarePossibleMoves;
+		Group* _promotionPieces;
 
 		ElapsedTime* _selectorTimer;
 		ElapsedTime* _animationDelayBetweenMoves;
 		bool _animationInProgress;
+		bool _piecePromotionInProgress;
+		bool _piecePromotionConversionInProgress;
+		bool _piecePromotionConversionFromHistoryInProgress;
+		double _timeToWaitForPromotingPieceFromHistory;
+		bool _piecePromotionReversionInProgress;
 
 		ElapsedTime* _whitePlayerGameTimer;
 		double _whitePlayerGameTimerD;

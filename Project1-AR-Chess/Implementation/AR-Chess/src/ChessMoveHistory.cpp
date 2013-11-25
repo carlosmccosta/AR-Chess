@@ -2,9 +2,11 @@
 
 
 ChessMoveHistory::ChessMoveHistory(ChessPiece* pieceMoved, Vec2i pieceMovedOriginPosition, Vec2i pieceMovedDestinationPosition, bool pieceHasMovedPriviously,
-	double whitePlayerGameTimerD, double blackPlayerGameTimerD, ChessPiece* pieceRemoved) :
+	double whitePlayerGameTimerD, double whitePlayerGameTimerDEndMove, double blackPlayerGameTimerD, double blackPlayerGameTimerDEndMove, ChessPiece* pieceRemoved) :
 	_pieceMoved(pieceMoved), _pieceMovedOriginPosition(pieceMovedOriginPosition), _pieceMovedDestinationPosition(pieceMovedDestinationPosition), _pieceHasMovedPriviously(pieceHasMovedPriviously),
-	_whitePlayerGameTimerD(whitePlayerGameTimerD), _blackPlayerGameTimerD(blackPlayerGameTimerD), _pieceRemoved(pieceRemoved), _performedCastling(false) {}
+	_whitePlayerGameTimerD(whitePlayerGameTimerD), _whitePlayerGameTimerDEndMove(whitePlayerGameTimerDEndMove),
+	_blackPlayerGameTimerD(blackPlayerGameTimerD), _blackPlayerGameTimerDEndMove(blackPlayerGameTimerDEndMove),
+	_pieceRemoved(pieceRemoved), _performedCastling(false), _performedPromotion(false) {}
 
 ChessMoveHistory::~ChessMoveHistory() {}
 

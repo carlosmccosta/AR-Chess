@@ -33,6 +33,7 @@ using osg::Vec2i;
 using osg::Vec3;
 using osg::Vec3i;
 using osg::Vec3f;
+using osg::Vec3d;
 using osg::Vec4;
 using osg::Quat;
 using osg::Vec2Array;
@@ -65,7 +66,7 @@ namespace ChessUtils {
 	MatrixTransform* loadOSGModel(string name, float modelSize, Material* material = NULL, bool overrideMaterial = false,
 		Vec3 modelCenterShift = Vec3(0.0, 0.0, 0.0),
 		double rotationAngle = 0, Vec3 rotationAxis = Vec3(0.0, 0.0, 1.0),
-		float xModelCenterOffsetPercentage = 0, float yModelCenterOffsetPercentage = 0, float zModelCenterOffsetPercentage = 0.5);
+		Vec3 modelCenterOffsetPercentage = Vec3(0.0, 0.0, 0.5));
 
 	LightSource* createLightSource(StateSet* stateSet,
 		int lightNumber = 1,		
@@ -91,7 +92,8 @@ namespace ChessUtils {
 	Camera* createHUDCamera(unsigned int screenWidth, unsigned int screenHeight);
 	Text3D* createText3D(const string& content, Font3D* font3D, const Vec3& position = Vec3(0, 0, 1), float size = 7, float depth = 1);
 
-	AnimationPath* createChessPieceAnimationPath(Vec3f initialPosition, Vec3f finalPosition, float rotationAngle = 0, Vec3f rotationAxis = osg::Z_AXIS, float pieceTravelSpeed = PIECE_MOVE_ANIMATION_TRAVEL_SPEED, size_t numberSamplesInPath = 128);
+	AnimationPath* createChessPieceMoveAnimationPath(Vec3f initialPosition, Vec3f finalPosition, float rotationAngle = 0, Vec3f rotationAxis = osg::Z_AXIS, float pieceTravelSpeed = PIECE_MOVE_ANIMATION_TRAVEL_SPEED, size_t numberSamplesInPath = 128);
+	AnimationPath* createScaleAnimationPath(Vec3f position, osgAnimation::Motion* scaleEaseMotion, float animationTimeSeconds = PROMOTION_SCALE_ANIMATION_DURATION_SECONDS, size_t numberSamplesInPath = 128);
 
 	string formatSecondsToDate(double seconds);
 };

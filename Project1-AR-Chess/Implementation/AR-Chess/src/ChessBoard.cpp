@@ -13,9 +13,7 @@ ChessBoard::ChessBoard() {
 	Vec3 modelCenterShift = Vec3(0.0, 0.0, 0.0);
 	double rotationAngle = 0;
 	Vec3 rotationAxis = Vec3(0.0, 0.0, 1.0);
-	float xModelCenterOffsetPercentage = 0; 
-	float yModelCenterOffsetPercentage = 0; 
-	float zModelCenterOffsetPercentage = -0.5;
+	Vec3 modelCenterOffsetPercentage = Vec3(0.0, 0.0, -0.5);
 
 	_boardShadowedScene = new osgShadow::ShadowedScene();
 	_boardShadowedScene->setReceivesShadowTraversalMask(RECEIVE_SHADOW_MASK);
@@ -25,8 +23,7 @@ ChessBoard::ChessBoard() {
 	blendTexEnv->setMode(osg::TexEnv::BLEND);
 	_boardShadowedScene->getOrCreateStateSet()->setTextureAttribute(0, blendTexEnv);
 
-	MatrixTransform* boardModelMT = ChessUtils::loadOSGModel(BOARD_MODEL, BOARD_SIZE, _boardMaterial, false, modelCenterShift, rotationAngle, rotationAxis,
-		xModelCenterOffsetPercentage, yModelCenterOffsetPercentage, zModelCenterOffsetPercentage);
+	MatrixTransform* boardModelMT = ChessUtils::loadOSGModel(BOARD_MODEL, BOARD_SIZE, _boardMaterial, false, modelCenterShift, rotationAngle, rotationAxis, modelCenterOffsetPercentage);
 	boardModelMT->setNodeMask(RECEIVE_SHADOW_MASK);
 	
 	setupNewGameSelectors();
@@ -38,19 +35,23 @@ ChessBoard::ChessBoard() {
 	_playersTimers = new Group();
 	_boardSquareSelectorHighlights = new Group();
 	_boardSquareSelections = new Group();	
+	_promotionPieces = new Group();
 	
 	setupBoardPieces();
 	setupPlayersTimers();
 
+	_whitePlayerGameTimer = new ElapsedTime();
+	_blackPlayerGameTimer = new ElapsedTime();
 	_selectorTimer = new ElapsedTime();
 	_animationDelayBetweenMoves = new ElapsedTime();
-	_animationInProgress = false;
+	_promotionConversionTimer = new ElapsedTime();	
 
 	_boardShadowedScene->addChild(boardModelMT);
 	_boardShadowedScene->addChild(_playersPieces);
 	_boardShadowedScene->addChild(_playersTimers);
 	_boardShadowedScene->addChild(_boardSquareSelectorHighlights);
-	_boardShadowedScene->addChild(_boardSquareSelections);	
+	_boardShadowedScene->addChild(_boardSquareSelections);
+	_boardShadowedScene->addChild(_promotionPieces);
 }
 
 ChessBoard::~ChessBoard() {}
@@ -144,10 +145,21 @@ osgShadow::ShadowedScene* ChessBoard::setupBoard() {
 	_moveOriginPosition = Vec2i(0, 0);
 	_moveDestinationPosition = Vec2i(0, 0);
 	
-	_whitePlayerGameTimer = new ElapsedTime();
-	_blackPlayerGameTimer = new ElapsedTime();
+	_whitePlayerGameTimer->finish();
+	_blackPlayerGameTimer->finish();
+	_selectorTimer->finish();
+	_animationDelayBetweenMoves->finish();
+	_promotionConversionTimer->finish();
+
 	_whitePlayerGameTimerD = 0;
-	_blackPlayerGameTimerD = 0;	
+	_blackPlayerGameTimerD = 0;
+
+	_animationInProgress = false;
+	_piecePromotionInProgress = false;
+	_piecePromotionConversionInProgress = false;
+	_piecePromotionConversionFromHistoryInProgress = false;
+	_piecePromotionReversionInProgress = false;
+	
 
 	updatePlayerStatus(_whitePlayerGameTimerText, _blackPlayerGameTimerText);	
 
@@ -269,7 +281,24 @@ MatrixTransform* ChessBoard::setupAuxiliarySelector(Vec2i position, Image* image
 
 
 bool ChessBoard::updateBoard(Vec2i selectorBoardPosition) {
-	updatePlayersGameTimers();	
+	updatePlayersGameTimers();
+
+	if (_piecePromotionConversionFromHistoryInProgress && !_piecePromotionConversionInProgress) {
+		if (_animationDelayBetweenMoves->elapsedTime() > _timeToWaitForPromotingPieceFromHistory) {
+			_pieceToPromote->shrinkPiece();
+			_promotionConversionTimer->finish();
+			_animationDelayBetweenMoves->finish();
+			_piecePromotionConversionInProgress = true;						
+		} else {
+			return true;
+		}
+	}
+
+
+	if (_piecePromotionConversionInProgress || _piecePromotionReversionInProgress) {
+		managePromotionConversionAndReversion();
+		return true;
+	}	
 	
 	bool selectorChangedPosition = false;
 	// reset selector timer when it changes position (even if it isn't inside the board squares)
@@ -308,7 +337,7 @@ bool ChessBoard::updateBoard(Vec2i selectorBoardPosition) {
 			if (_selectorTimer->elapsedTime_m() > PADDLE_TIME_TO_SELECT_POSITION) {
 				_selectorTimer->reset();
 				
-				if (positionIsAnAuxiliarySelector != SELECTOR_INVALID) {
+				if (positionIsAnAuxiliarySelector != SELECTOR_INVALID || _piecePromotionInProgress) {
 					processAuxiliarySelector(positionIsAnAuxiliarySelector);
 					return true;
 				}
@@ -330,15 +359,12 @@ bool ChessBoard::updateBoard(Vec2i selectorBoardPosition) {
 }
 
 
-void ChessBoard::updatePlayersGameTimers(bool forceUpdate) {
-	// start timers when player moves paddle inside board for first time in the game
-	if (_currentPlayer == WHITE || forceUpdate) {
-		//if (_whitePlayerGameTimer == NULL) { _whitePlayerGameTimer = new ElapsedTime(); }
+void ChessBoard::updatePlayersGameTimers(bool forceUpdate) {	
+	if (_currentPlayer == WHITE || forceUpdate) {		
 		_whitePlayerGameTimerText->setText(ChessUtils::formatSecondsToDate(_whitePlayerGameTimerD + _whitePlayerGameTimer->elapsedTime()));
 	}
 
-	if (_currentPlayer == BLACK || forceUpdate) {
-		//if (_blackPlayerGameTimer == NULL) { _blackPlayerGameTimer = new ElapsedTime(); }
+	if (_currentPlayer == BLACK || forceUpdate) {		
 		_blackPlayerGameTimerText->setText(ChessUtils::formatSecondsToDate(_blackPlayerGameTimerD + _blackPlayerGameTimer->elapsedTime()));
 	}
 }
@@ -361,6 +387,32 @@ void ChessBoard::processAuxiliarySelector(AuxiliarySelector auxiliarySelector) {
 		if (goToNextMoveInHistory()) {
 			_animationDelayBetweenMoves->reset();
 			_animationInProgress = true;
+		}
+	}
+
+
+	if (_piecePromotionInProgress) {		
+		if (auxiliarySelector == SELECTOR_PROMOTE_TO_QUEEN_WHITE_SIDE || auxiliarySelector == SELECTOR_PROMOTE_TO_QUEEN_BLACK_SIDE) {
+			_rankOfPromotion = QUEEN;
+			_piecePromotionConversionInProgress = true;
+		} else if (auxiliarySelector == SELECTOR_PROMOTE_TO_ROOK_WHITE_SIDE || auxiliarySelector == SELECTOR_PROMOTE_TO_ROOK_BLACK_SIDE) {
+			_rankOfPromotion = ROOK;
+			_piecePromotionConversionInProgress = true;
+		} else if (auxiliarySelector == SELECTOR_PROMOTE_TO_KNIGHT_WHITE_SIDE || auxiliarySelector == SELECTOR_PROMOTE_TO_KNIGHT_BLACK_SIDE) {
+			_rankOfPromotion = KNIGHT;
+			_piecePromotionConversionInProgress = true;
+		} else if (auxiliarySelector == SELECTOR_PROMOTE_TO_BISHOP_WHITE_SIDE || auxiliarySelector == SELECTOR_PROMOTE_TO_BISHOP_BLACK_SIDE) {
+			_rankOfPromotion = BISHOP;
+			_piecePromotionConversionInProgress = true;
+		}
+
+		if (_piecePromotionConversionInProgress) {
+			_promotionConversionTimer->finish();
+			_pieceToPromote->shrinkPiece();
+
+			for (size_t i = 0; i < _promotionChessPieces.size(); ++i) {
+				_promotionChessPieces[i]->shrinkPiece();				
+			}
 		}
 	}
 }
@@ -404,23 +456,17 @@ bool ChessBoard::processSecondSelection(Vec2i selectorBoardPosition, AuxiliarySe
 		_moveDestinationPosition.x() = selectorBoardPosition.x();
 		_moveDestinationPosition.y() = selectorBoardPosition.y();		
 
-		if (_currentPlayer == WHITE) {
-			_whitePlayerGameTimerD += _whitePlayerGameTimer->elapsedTime();
-		}
-		else {
-			_blackPlayerGameTimerD += _blackPlayerGameTimer->elapsedTime();
+		// remove opponent piece if necessary
+		ChessPiece* pieceRemoved = NULL;
+		if (movePositionStatus == POSITION_WITH_OPPONENT_PIECE) {
+			pieceRemoved = removeChessPieceWithAnimation(_moveDestinationPosition, _currentPlayer);						
 		}
 
-		// remove opponent piece if necessary
-		if (movePositionStatus == POSITION_WITH_OPPONENT_PIECE) {
-			ChessPiece* pieceRemoved = removeChessPieceWithAnimation(_moveDestinationPosition, _currentPlayer);			
-			_pieceMovesHistoryBackwardsStack.push_back(new ChessMoveHistory(_pieceToMove, _moveOriginPosition, _moveDestinationPosition,
-				_pieceToMove->hasPieceMovedPreviously(), _whitePlayerGameTimerD, _blackPlayerGameTimerD, pieceRemoved));
-			
-		} else {
-			_pieceMovesHistoryBackwardsStack.push_back(new ChessMoveHistory(_pieceToMove, _moveOriginPosition, _moveDestinationPosition,
-				_pieceToMove->hasPieceMovedPreviously(), _whitePlayerGameTimerD, _blackPlayerGameTimerD));
-		}
+		_pieceMovesHistoryBackwardsStack.push_back(new ChessMoveHistory(_pieceToMove, _moveOriginPosition, _moveDestinationPosition,
+			_pieceToMove->hasPieceMovedPreviously(),
+			_whitePlayerGameTimerD, _whitePlayerGameTimerD + _whitePlayerGameTimer->elapsedTime(),
+			_blackPlayerGameTimerD, _blackPlayerGameTimerD + _blackPlayerGameTimer->elapsedTime(),
+			pieceRemoved));
 
 		// animate piece movement to final destination
 		clearHighlights();
@@ -430,8 +476,7 @@ bool ChessBoard::processSecondSelection(Vec2i selectorBoardPosition, AuxiliarySe
 		moveChessPieceWithAnimation(_pieceToMove, _moveDestinationPosition);		
 		
 		_animationDelayBetweenMoves->reset();
-		_animationInProgress = true;
-		switchPlayer();
+		_animationInProgress = true;		
 
 		return true;
 	}
@@ -462,6 +507,11 @@ void ChessBoard::clearSelections() {
 
 void ChessBoard::clearPossibleMoves() {
 	_boardSquarePossibleMoves->removeChildren(0, _boardSquarePossibleMoves->getNumChildren());
+}
+
+
+void ChessBoard::clearPromotionPieces() {
+	_promotionPieces->removeChildren(0, _promotionPieces->getNumChildren());
 }
 
 
@@ -547,7 +597,12 @@ bool ChessBoard::hightLighPosition(int xBoardPosition, int yBoardPosition, Auxil
 				break;
 			}
 
+			// promotion selectors
 			default: {
+				Vec3f scenePosition = ChessUtils::computePieceScenePosition(xBoardPosition, yBoardPosition);
+				scenePosition.y() += (_currentPlayer == WHITE ? PROMOTION_PIECES_BOARD_OFFSET : -PROMOTION_PIECES_BOARD_OFFSET);
+				scenePosition.z() = BOARD_HIGHLIGHTS_HEIGHT_OFFSET;
+				_boardSquareSelectorHighlights->addChild(ChessUtils::createRectangleWithTexture(scenePosition, new Image(*_paddleSelectorImage)));
 				break;
 			}
 		}
@@ -689,6 +744,10 @@ void ChessBoard::moveChessPieceWithAnimation(ChessPiece* chessPieceToMove, Vec2i
 		chessPieceToMove->changePosition(finalPosition.x(), finalPosition.y());
 	} else {
 		_pieceMovesHistoryBackwardsStack.back()->setPerformedCastling(true);
+	}	
+
+	if (!checkAndPerformPromotion(chessPieceToMove, finalPosition)) {
+		switchPlayer();
 	}
 
 	_pieceMovesHistoryFowardStack.clear();
@@ -735,7 +794,7 @@ bool ChessBoard::isCastlingPossible(ChessPiece* king, Vec2i kingFinalPosition) {
 				return false;
 			}
 				
-			// TODO check if any position from the king to the final position is attacked	
+			// TODO check if any position from the king to the final position is attacked
 			
 			return true;
 		} else if (kingFinalPosition.x() == -2) {
@@ -762,9 +821,87 @@ bool ChessBoard::isCastlingPossible(ChessPiece* king, Vec2i kingFinalPosition) {
 }
 
 
+bool ChessBoard::checkAndPerformPromotion(ChessPiece* chessPieceMoved, Vec2i finalPosition) {
+	if (chessPieceMoved->getChessPieceType() == PAWN) {
+		if ((chessPieceMoved->getChessPieceColor() == WHITE && chessPieceMoved->getYPosition() == 4) ||
+			(chessPieceMoved->getChessPieceColor() == BLACK && chessPieceMoved->getYPosition() == -4)) {
+			_pieceToPromote = chessPieceMoved;
+			setupPromotionPiecesOnBoad(chessPieceMoved->getChessPieceColor());
+			return true;
+		}
+	}
+
+	return false;
+}
+
+
+void ChessBoard::setupPromotionPiecesOnBoad(ChessPieceColor chessPieceColor) {
+	_promotionChessPieces.clear();
+	_piecePromotionInProgress = true;
+	
+	Vec3 scaleFactor = Vec3(0.0, 0.0, 0.0);
+	Vec3 translateOffset = Vec3(0.0, (chessPieceColor == WHITE ? PROMOTION_PIECES_BOARD_OFFSET : -PROMOTION_PIECES_BOARD_OFFSET), 0.0);
+
+	_promotionChessPieces.push_back(new ChessPiece(QUEEN, chessPieceColor, (chessPieceColor == WHITE ? -2 : 2), (chessPieceColor == WHITE ? 5 : -5), _whitePiecesMaterial, scaleFactor, translateOffset));
+	_promotionChessPieces.push_back(new ChessPiece(ROOK, chessPieceColor, (chessPieceColor == WHITE ? -1 : 1), (chessPieceColor == WHITE ? 5 : -5), _whitePiecesMaterial, scaleFactor, translateOffset));
+	_promotionChessPieces.push_back(new ChessPiece(KNIGHT, chessPieceColor, (chessPieceColor == WHITE ? 1 : -1), (chessPieceColor == WHITE ? 5 : -5), _whitePiecesMaterial, scaleFactor, translateOffset));
+	_promotionChessPieces.push_back(new ChessPiece(BISHOP, chessPieceColor, (chessPieceColor == WHITE ? 2 : -2), (chessPieceColor == WHITE ? 5 : -5), _whitePiecesMaterial, scaleFactor, translateOffset));
+
+
+	for (size_t i = 0; i < _promotionChessPieces.size(); ++i) {
+		_promotionChessPieces[i]->unshrinkPiece();
+		_promotionPieces->addChild(_promotionChessPieces[i]->getPieceMatrixTransform());
+	}
+}
+
+
+void ChessBoard::managePromotionConversionAndReversion() {	
+	if (_promotionConversionTimer->elapsedTime() > PROMOTION_SCALE_ANIMATION_DURATION_SECONDS) {
+		// after original piece completes shrinking, replace the model
+		if (_pieceToPromote->getChessPieceType() != _rankOfPromotion) {
+			clearPromotionPieces();
+
+			if (!_piecePromotionReversionInProgress && !_piecePromotionConversionFromHistoryInProgress) {
+				_pieceMovesHistoryBackwardsStack.back()->setPerformedPromotion(true);
+				_pieceMovesHistoryBackwardsStack.back()->setOriginalPieceType(_pieceToPromote->getChessPieceType());
+				_pieceMovesHistoryBackwardsStack.back()->setPromotionPieceType(_rankOfPromotion);
+			}
+
+			_pieceToPromote->loadPieceModel(_rankOfPromotion, Vec3(0.0, 0.0, 0.0));
+			_pieceToPromote->unshrinkPiece();
+		}
+	}
+
+	// piece promotion done
+	if (_promotionConversionTimer->elapsedTime() > 2.0 * PROMOTION_SCALE_ANIMATION_DURATION_SECONDS) {
+		_selectorTimer->finish();
+		_piecePromotionInProgress = false;
+		_piecePromotionConversionInProgress = false;
+		_piecePromotionConversionFromHistoryInProgress = false;
+
+		if (_piecePromotionReversionInProgress) {
+			ChessMoveHistory* moveBackInfo = _pieceMovesHistoryFowardStack.back();
+			
+			// move piece to original position
+			moveBackInfo->moveBackInHistory();
+			_piecePromotionReversionInProgress = false;
+		}		
+
+		switchPlayer();
+	}
+}
+
+
+void ChessBoard::removePromotionPiecesOnBoad() {
+	for (size_t i = 0; i < _promotionChessPieces.size(); ++i) {
+		_promotionChessPieces[i]->shrinkPiece();	
+	}
+}
+
+
 bool ChessBoard::goToPreviousMoveInHistory() {
 	if (!_pieceMovesHistoryBackwardsStack.empty()) {
-		ChessMoveHistory* moveBackInfo = _pieceMovesHistoryBackwardsStack.back();		
+		ChessMoveHistory* moveBackInfo = _pieceMovesHistoryBackwardsStack.back();	
 		
 		// move rook to original position
 		if (moveBackInfo->hasPerformedCastling()) {
@@ -775,17 +912,27 @@ bool ChessBoard::goToPreviousMoveInHistory() {
 				rook->changePosition((king->getXPosition() == 3 ? 4 : -4), king->getYPosition());
 			}
 		}
-		
-		// move king to original position
-		moveBackInfo->moveBackInHistory();
 
 		_pieceMovesHistoryFowardStack.push_back(moveBackInfo);
 		_pieceMovesHistoryBackwardsStack.pop_back();
 
-		switchPlayer();
+		if (moveBackInfo->hasPerformedPromotion()) {			
+			_pieceToPromote = moveBackInfo->getPieceMoved();
+			_rankOfPromotion = moveBackInfo->getOriginalPieceType();
 
+			_pieceToPromote->shrinkPiece();
+			_promotionConversionTimer->finish();
+			_piecePromotionReversionInProgress = true;
+		} else {
+			// move king to original position
+			moveBackInfo->moveBackInHistory();
+			switchPlayer();
+		}				
+		
 		_whitePlayerGameTimerD = moveBackInfo->getWhitePlayerGameTimerD();
-		_blackPlayerGameTimerD = moveBackInfo->getBlackPlayerGameTimerD();		
+		_blackPlayerGameTimerD = moveBackInfo->getBlackPlayerGameTimerD();
+		_whitePlayerGameTimer->finish();
+		_blackPlayerGameTimer->finish();
 		updatePlayersGameTimers(true);
 
 		updateHistoryManipulatorsVisibility();		
@@ -821,13 +968,35 @@ bool ChessBoard::goToNextMoveInHistory() {
 		_pieceMovesHistoryBackwardsStack.push_back(moveFowardInfo);
 		_pieceMovesHistoryFowardStack.pop_back();
 
-		switchPlayer();
+		if (moveFowardInfo->hasPerformedPromotion()) {			
+			_pieceToPromote = moveFowardInfo->getPieceMoved();
+			_rankOfPromotion = moveFowardInfo->getPromotionPieceType();
+			_animationDelayBetweenMoves->finish();
 
-		_whitePlayerGameTimerD = moveFowardInfo->getWhitePlayerGameTimerD();
-		_blackPlayerGameTimerD = moveFowardInfo->getBlackPlayerGameTimerD();		
+			Vec2i pieceMovedOriginPosition = moveFowardInfo->getPieceMovedOriginPosition();
+			Vec2i pieceMovedDestinationPosition = moveFowardInfo->getPieceMovedDestinationPosition();
+
+			Vec3f initialPieceScenePosition = ChessUtils::computePieceScenePosition(pieceMovedOriginPosition.x(), pieceMovedOriginPosition.y());
+			Vec3f finalPieceScenePosition = ChessUtils::computePieceScenePosition(pieceMovedDestinationPosition.x(), pieceMovedDestinationPosition.y());
+
+			Vec3 positionsOffset = finalPieceScenePosition - initialPieceScenePosition;
+			float positionsDistance = positionsOffset.length();
+			float pieceTravelSpeed = PIECE_MOVE_ANIMATION_TRAVEL_SPEED;
+			_timeToWaitForPromotingPieceFromHistory = std::max(positionsDistance / pieceTravelSpeed, 2.0f);
+
+			_piecePromotionConversionInProgress = false;
+			_piecePromotionConversionFromHistoryInProgress = true;
+		} else {			
+			switchPlayer();
+		}
+
+		_whitePlayerGameTimerD = moveFowardInfo->getWhitePlayerGameTimerDEndMove();
+		_blackPlayerGameTimerD = moveFowardInfo->getBlackPlayerGameTimerDEndMove();
+		_whitePlayerGameTimer->finish();
+		_blackPlayerGameTimer->finish();
 		updatePlayersGameTimers(true);
 
-		updateHistoryManipulatorsVisibility();		
+		updateHistoryManipulatorsVisibility();
 		if (_pieceMovesHistoryFowardStack.empty()) {
 			clearHighlights();
 		}
@@ -875,10 +1044,17 @@ void ChessBoard::updateHistoryManipulatorsVisibility() {
 
 
 void ChessBoard::switchPlayer() {
-	_currentPlayer = ChessPiece::getOpponentChessPieceColor(_currentPlayer);
+	if (_currentPlayer == WHITE) {
+		_whitePlayerGameTimerD += _whitePlayerGameTimer->elapsedTime();
+	} else {
+		_blackPlayerGameTimerD += _blackPlayerGameTimer->elapsedTime();
+	}
 	
+	_currentPlayer = ChessPiece::getOpponentChessPieceColor(_currentPlayer);
+
 	_whitePlayerGameTimer->finish();
 	_blackPlayerGameTimer->finish();
+	_selectorTimer->finish();
 
 	if (_currentPlayer == WHITE) {
 		updatePlayerStatus(_whitePlayerGameTimerText, _blackPlayerGameTimerText);
@@ -899,6 +1075,7 @@ bool ChessBoard::isPositionValid(int position) {
 
 
 AuxiliarySelector ChessBoard::isPositionAnAuxiliarySelector(Vec2i position) {
+	// history manipulators
 	if (position.x() == -6 && position.y() == -4) {
 		return SELECTOR_PREVIOUS_MOVE_WHITE_SIDE;
 	}
@@ -916,6 +1093,7 @@ AuxiliarySelector ChessBoard::isPositionAnAuxiliarySelector(Vec2i position) {
 	}
 
 
+	// new game manipulators
 	if ((position.x() == 5 || position.x() == 6) && position.y() == -4) {
 		return SELECTOR_NEW_GAME_H_H_WHITE_SIDE;
 	}
@@ -938,6 +1116,44 @@ AuxiliarySelector ChessBoard::isPositionAnAuxiliarySelector(Vec2i position) {
 
 	if (position.x() == -6 && position.y() == 5) {
 		return SELECTOR_NEW_GAME_C_C_BLACK_SIDE;
+	}
+
+
+	// piece promotion manipulators
+	if (_piecePromotionInProgress) {
+		if (_currentPlayer == WHITE) {
+			if (position.x() == -2 && position.y() == 5) {
+				return SELECTOR_PROMOTE_TO_QUEEN_BLACK_SIDE;
+			}			
+
+			if (position.x() == -1 && position.y() == 5) {
+				return SELECTOR_PROMOTE_TO_ROOK_BLACK_SIDE;
+			}
+			
+			if (position.x() == 1 && position.y() == 5) {
+				return SELECTOR_PROMOTE_TO_KNIGHT_BLACK_SIDE;
+			}
+
+			if (position.x() == 2 && position.y() == 5) {
+				return SELECTOR_PROMOTE_TO_BISHOP_BLACK_SIDE;
+			}
+		} else {
+			if (position.x() == 2 && position.y() == -5) {
+				return SELECTOR_PROMOTE_TO_QUEEN_WHITE_SIDE;
+			}
+
+			if (position.x() == 1 && position.y() == -5) {
+				return SELECTOR_PROMOTE_TO_ROOK_WHITE_SIDE;
+			}
+
+			if (position.x() == -1 && position.y() == -5) {
+				return SELECTOR_PROMOTE_TO_KNIGHT_WHITE_SIDE;
+			}
+
+			if (position.x() == -2 && position.y() == -5) {
+				return SELECTOR_PROMOTE_TO_BISHOP_WHITE_SIDE;
+			}
+		}		
 	}
 
 	return SELECTOR_INVALID;	

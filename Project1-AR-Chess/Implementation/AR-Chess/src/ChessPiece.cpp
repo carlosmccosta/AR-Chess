@@ -1,37 +1,68 @@
 #include "ChessPiece.h"
 
 
-ChessPiece::ChessPiece(ChessPieceType chessPieceType, ChessPieceColor chessPieceColor, int xPosition, int yPosition, Material* material) :
+ChessPiece::ChessPiece(ChessPieceType chessPieceType, ChessPieceColor chessPieceColor, int xPosition, int yPosition, Material* material, Vec3 scaleFactor, Vec3 translateOffset) :
 	_chessPieceType(chessPieceType),
 	_chessPieceColor(chessPieceColor),
 	_xPosition(xPosition),
 	_yPosition(yPosition),
+	_chessPieceInitialType(chessPieceType),
 	_xInitialPosition(xPosition),
 	_yInitialPosition(yPosition),
 	_piecePlayable(true),
-	_pieceMovedPreviously(false) {
+	_pieceMovedPreviously(false),
+	_pieceMaterial(material) {
 
-	// necessary parameters to position piece in board
-	string name = getPieceModelPath(chessPieceType, chessPieceColor);
-	float modelSize = getPieceModelSize(chessPieceType);
-	_pieceCurrentScenePosition = ChessUtils::computePieceScenePosition(xPosition, yPosition);
-	double rotationAngle = 0;
-	Vec3f rotationAxis = Vec3f(0.0, 0.0, 1.0);
-	
-	// rotate knights to face each other
-	if (chessPieceType == KNIGHT && xPosition < 0) {		
-		rotationAngle = osg::PI;
-	}
-
-	if (chessPieceType == BISHOP && xPosition > 0) {		
-		rotationAngle = osg::PI;
-	}
-
-	_pieceMatrixTransform = ChessUtils::loadOSGModel(name, modelSize, material, false, _pieceCurrentScenePosition, rotationAngle, rotationAxis);
-	_pieceMatrixTransform->setNodeMask(CAST_SHADOW_MASK);
+	_pieceMatrixTransform = new MatrixTransform();
+	loadPieceModel(chessPieceType, scaleFactor, translateOffset);
 }
 
 ChessPiece::~ChessPiece() {}
+
+
+void ChessPiece::loadPieceModel(ChessPieceType chessPieceType, Vec3 scaleFactor, Vec3 translateOffset) {
+	_chessPieceType = chessPieceType;
+
+	// necessary parameters to position piece in board
+	string name = getPieceModelPath(chessPieceType, _chessPieceColor);
+	float modelSize = getPieceModelSize(chessPieceType);
+	_pieceCurrentScenePosition = ChessUtils::computePieceScenePosition(_xPosition, _yPosition);
+	_pieceCurrentScenePosition.x() += translateOffset.x();
+	_pieceCurrentScenePosition.y() += translateOffset.y();
+	_pieceCurrentScenePosition.z() += translateOffset.z();
+
+	double rotationAngle = 0;
+	Vec3f rotationAxis = Vec3f(0.0, 0.0, 1.0);
+
+	// rotate knights to face each other
+	if (chessPieceType == KNIGHT && _xPosition < 0) {
+		rotationAngle = osg::PI;
+	}
+
+	if (chessPieceType == BISHOP && _xPosition > 0) {
+		rotationAngle = osg::PI;
+	}
+	
+	clearMatrixTransform();
+	_pieceMatrixTransformModel = ChessUtils::loadOSGModel(name, modelSize, _pieceMaterial, false, _pieceCurrentScenePosition, rotationAngle, rotationAxis);
+	_pieceMatrixTransformModel->postMult(Matrix::scale(scaleFactor));
+	_pieceMatrixTransform->addChild(_pieceMatrixTransformModel);
+	_pieceMatrixTransform->setNodeMask(CAST_SHADOW_MASK);
+}
+
+
+void ChessPiece::shrinkPiece() {
+	osgAnimation::Motion* scaleEaseMotion = new osgAnimation::InBackMotion(1.0, PROMOTION_SCALE_ANIMATION_DURATION_SECONDS, -1.0);
+	osg::AnimationPathCallback* animationPathCallback = new osg::AnimationPathCallback(ChessUtils::createScaleAnimationPath(_pieceCurrentScenePosition, scaleEaseMotion, PROMOTION_SCALE_ANIMATION_DURATION_SECONDS));
+	_pieceMatrixTransformModel->setUpdateCallback(animationPathCallback);
+}
+
+
+void ChessPiece::unshrinkPiece() {
+	osgAnimation::Motion* scaleEaseMotion = new osgAnimation::OutBackMotion(0, PROMOTION_SCALE_ANIMATION_DURATION_SECONDS, 1.0);
+	osg::AnimationPathCallback* animationPathCallback = new osg::AnimationPathCallback(ChessUtils::createScaleAnimationPath(_pieceCurrentScenePosition, scaleEaseMotion, PROMOTION_SCALE_ANIMATION_DURATION_SECONDS));
+	_pieceMatrixTransformModel->setUpdateCallback(animationPathCallback);
+}
 
 
 string ChessPiece::getPieceModelPath(ChessPieceType chessPieceType, ChessPieceColor chessPieceColor) {
@@ -125,8 +156,8 @@ void ChessPiece::changePosition(int xPosition, int yPosition) {
 
 	Vec3f finalPieceScenePosition = ChessUtils::computePieceScenePosition(xPosition, yPosition);
 
-	osg::AnimationPathCallback* animationPathCallback = new osg::AnimationPathCallback(ChessUtils::createChessPieceAnimationPath(_pieceCurrentScenePosition, finalPieceScenePosition));
-	_pieceMatrixTransform->setUpdateCallback(animationPathCallback);
+	osg::AnimationPathCallback* animationPathCallback = new osg::AnimationPathCallback(ChessUtils::createChessPieceMoveAnimationPath(_pieceCurrentScenePosition, finalPieceScenePosition));
+	_pieceMatrixTransformModel->setUpdateCallback(animationPathCallback);
 	_pieceCurrentScenePosition = finalPieceScenePosition;
 }
 
@@ -135,6 +166,10 @@ void ChessPiece::resetPosition() {
 	changePosition(_xInitialPosition, _yInitialPosition);
 	_pieceMovedPreviously = false;
 	_piecePlayable = true;
+
+	if (_chessPieceType != _chessPieceInitialType) {
+		loadPieceModel(_chessPieceInitialType);
+	}
 }
 
 
@@ -158,8 +193,8 @@ void ChessPiece::removePieceFromBoard() {
 
 	finalPieceScenePosition.y() *= BOARD_SQUARE_SHRINK_RATIO_FOR_OUTSIDE_PIECES;
 
-	osg::AnimationPathCallback* animationPathCallback = new osg::AnimationPathCallback(ChessUtils::createChessPieceAnimationPath(_pieceCurrentScenePosition, finalPieceScenePosition, -osg::PI_2));
-	_pieceMatrixTransform->setUpdateCallback(animationPathCallback);
+	osg::AnimationPathCallback* animationPathCallback = new osg::AnimationPathCallback(ChessUtils::createChessPieceMoveAnimationPath(_pieceCurrentScenePosition, finalPieceScenePosition, -osg::PI_2));
+	_pieceMatrixTransformModel->setUpdateCallback(animationPathCallback);
 	_pieceCurrentScenePosition = finalPieceScenePosition;
 }
 
@@ -167,6 +202,11 @@ void ChessPiece::removePieceFromBoard() {
 void ChessPiece::reinsertPieceOnBoard() {
 	_piecePlayable = true;
 	changePosition(_xPosition, _yPosition);
+}
+
+
+void ChessPiece::clearMatrixTransform() {
+	_pieceMatrixTransform->removeChildren(0, _pieceMatrixTransform->getNumChildren());
 }
 
 

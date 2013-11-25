@@ -83,6 +83,8 @@
 #define HISTORY_NEXT_MOVE_IMG "images/arrow_right.png"
 #define HISTORY_NEXT_MOVE_SELECTED_IMG "images/arrow_right_selected.png"
 
+#define PROMOTION_SCALE_ANIMATION_DURATION_SECONDS 2
+#define PROMOTION_PIECES_BOARD_OFFSET 2.6
 
 #define RECEIVE_SHADOW_MASK 0x1
 #define CAST_SHADOW_MASK 0x2

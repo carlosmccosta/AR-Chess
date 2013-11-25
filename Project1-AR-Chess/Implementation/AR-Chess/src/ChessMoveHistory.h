@@ -16,7 +16,7 @@ using osg::Referenced;
 class ChessMoveHistory : public Referenced {
 	public:
 		ChessMoveHistory(ChessPiece* pieceMoved, Vec2i pieceMovedOriginPosition, Vec2i pieceMovedDestinationPosition, bool pieceHasMovedPriviously,
-			double whitePlayerGameTimerD = 0, double blackPlayerGameTimerD = 0, ChessPiece* pieceRemoved = NULL);
+			double whitePlayerGameTimerD = 0, double whitePlayerGameTimerDEndMove = 0, double blackPlayerGameTimerD = 0, double blackPlayerGameTimerDEndMove = 0, ChessPiece* pieceRemoved = NULL);
 		virtual ~ChessMoveHistory();
 
 		void moveBackInHistory();
@@ -27,21 +27,34 @@ class ChessMoveHistory : public Referenced {
 		Vec2i getPieceMovedOriginPosition() const { return _pieceMovedOriginPosition; }		
 		Vec2i getPieceMovedDestinationPosition() const { return _pieceMovedDestinationPosition; }
 		double getWhitePlayerGameTimerD() const { return _whitePlayerGameTimerD; }
+		double getWhitePlayerGameTimerDEndMove() const { return _whitePlayerGameTimerDEndMove; }
 		double getBlackPlayerGameTimerD() const { return _blackPlayerGameTimerD; }
+		double getBlackPlayerGameTimerDEndMove() const { return _blackPlayerGameTimerDEndMove; }
 		ChessPiece* getPieceRemoved() const { return _pieceRemoved; }
 		bool hasPerformedCastling() const { return _performedCastling; }
 		void setPerformedCastling(bool val) { _performedCastling = val; }
+		bool hasPerformedPromotion() const { return _performedPromotion; }
+		void setPerformedPromotion(bool val) { _performedPromotion = val; }
+		ChessPieceType getOriginalPieceType() const { return _originalPieceType; }
+		void setOriginalPieceType(ChessPieceType val) { _originalPieceType = val; }
+		ChessPieceType getPromotionPieceType() const { return _promotionPieceType; }
+		void setPromotionPieceType(ChessPieceType val) { _promotionPieceType = val; }
 		// ------------------------------------------------------------------------------  </gets | sets> ------------------------------------------------------------------------------
 
 
 	private:
 		ChessPiece* _pieceMoved;		
 		Vec2i _pieceMovedOriginPosition;
-		Vec2i _pieceMovedDestinationPosition;		
+		Vec2i _pieceMovedDestinationPosition;
 		bool _pieceHasMovedPriviously;
-		double _whitePlayerGameTimerD;				
-		double _blackPlayerGameTimerD;		
+		double _whitePlayerGameTimerD;
+		double _whitePlayerGameTimerDEndMove;				
+		double _blackPlayerGameTimerD;
+		double _blackPlayerGameTimerDEndMove;								
 		ChessPiece* _pieceRemoved;
-		bool _performedCastling;		
+		bool _performedCastling;
+		bool _performedPromotion;		
+		ChessPieceType _originalPieceType;
+		ChessPieceType _promotionPieceType;		
 };
 
