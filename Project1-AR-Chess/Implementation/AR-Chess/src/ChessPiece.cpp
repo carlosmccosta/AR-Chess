@@ -39,22 +39,22 @@ string ChessPiece::getPieceModelPath(ChessPieceType chessPieceType, ChessPieceCo
 	if (chessPieceColor == WHITE) {
 		switch (chessPieceType) {
 			case KING:
-				pieceModelPath = PIECE_WHITE_KING;
+				pieceModelPath = PIECE_WHITE_KING_MODEL;
 				break;
 			case QUEEN:
-				pieceModelPath = PIECE_WHITE_QUEEN;
+				pieceModelPath = PIECE_WHITE_QUEEN_MODEL;
 				break;
 			case ROOK:
-				pieceModelPath = PIECE_WHITE_ROOK;
+				pieceModelPath = PIECE_WHITE_ROOK_MODEL;
 				break;
 			case KNIGHT:
-				pieceModelPath = PIECE_WHITE_KNIGHT;
+				pieceModelPath = PIECE_WHITE_KNIGHT_MODEL;
 				break;
 			case BISHOP:
-				pieceModelPath = PIECE_WHITE_BISHOP;
+				pieceModelPath = PIECE_WHITE_BISHOP_MODEL;
 				break;
 			case PAWN:
-				pieceModelPath = PIECE_WHITE_PAWN;
+				pieceModelPath = PIECE_WHITE_PAWN_MODEL;
 				break;
 			default:
 				break;
@@ -62,22 +62,22 @@ string ChessPiece::getPieceModelPath(ChessPieceType chessPieceType, ChessPieceCo
 	} else {
 		switch (chessPieceType) {
 			case KING:
-				pieceModelPath = PIECE_BLACK_KING;
+				pieceModelPath = PIECE_BLACK_KING_MODEL;
 				break;
 			case QUEEN:
-				pieceModelPath = PIECE_BLACK_QUEEN;
+				pieceModelPath = PIECE_BLACK_QUEEN_MODEL;
 				break;
 			case ROOK:
-				pieceModelPath = PIECE_BLACK_ROOK;
+				pieceModelPath = PIECE_BLACK_ROOK_MODEL;
 				break;
 			case KNIGHT:
-				pieceModelPath = PIECE_BLACK_KNIGHT;
+				pieceModelPath = PIECE_BLACK_KNIGHT_MODEL;
 				break;
 			case BISHOP:
-				pieceModelPath = PIECE_BLACK_BISHOP;
+				pieceModelPath = PIECE_BLACK_BISHOP_MODEL;
 				break;
 			case PAWN:
-				pieceModelPath = PIECE_BLACK_PAWN;
+				pieceModelPath = PIECE_BLACK_PAWN_MODEL;
 				break;
 			default:
 				break;
@@ -157,6 +157,12 @@ void ChessPiece::removePieceFromBoard() {
 	osg::AnimationPathCallback* animationPathCallback = new osg::AnimationPathCallback(ChessUtils::createChessPieceAnimationPath(_pieceCurrentScenePosition, finalPieceScenePosition, -osg::PI_2));
 	_pieceMatrixTransform->setUpdateCallback(animationPathCallback);
 	_pieceCurrentScenePosition = finalPieceScenePosition;
+}
+
+
+void ChessPiece::reinsertPieceOnBoard() {
+	_piecePlayable = true;
+	changePosition(_xPosition, _yPosition);
 }
 
 

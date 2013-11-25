@@ -50,13 +50,13 @@
     <ClInclude Include="src\ChessUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ModelsConfigs.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\CloudParticleSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ChessMoveHistory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Configs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

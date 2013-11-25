@@ -2,7 +2,7 @@
 6
 
 #marker 1
-patterns/artoolkit/multi/patt.a
+patterns/artoolkit/multi/a.patt
 40.0
 0.0 0.0
 1.0000 0.0000 0.0000 -100.0000
@@ -10,7 +10,7 @@ patterns/artoolkit/multi/patt.a
 0.0000 0.0000 1.0000    0.0000
 
 #marker 2
-patterns/artoolkit/multi/patt.b
+patterns/artoolkit/multi/b.patt
 40.0
 0.0 0.0
 1.0000 0.0000 0.0000    0.0000
@@ -18,7 +18,7 @@ patterns/artoolkit/multi/patt.b
 0.0000 0.0000 1.0000    0.0000
 
 #marker 3
-patterns/artoolkit/multi/patt.c
+patterns/artoolkit/multi/c.patt
 40.0
 0.0 0.0
 1.0000 0.0000 0.0000  100.0000
@@ -26,7 +26,7 @@ patterns/artoolkit/multi/patt.c
 0.0000 0.0000 1.0000    0.0000
 
 #marker 4
-patterns/artoolkit/multi/patt.d
+patterns/artoolkit/multi/d.patt
 40.0
 0.0 0.0
 1.0000 0.0000 0.0000 -100.0000
@@ -34,7 +34,7 @@ patterns/artoolkit/multi/patt.d
 0.0000 0.0000 1.0000    0.0000
 
 #marker 5
-patterns/artoolkit/multi/patt.g
+patterns/artoolkit/multi/g.patt
 40.0
 0.0 0.0
 1.0000 0.0000 0.0000    0.0000
@@ -42,7 +42,7 @@ patterns/artoolkit/multi/patt.g
 0.0000 0.0000 1.0000    0.0000
 
 #marker 6
-patterns/artoolkit/multi/patt.f
+patterns/artoolkit/multi/f.patt
 40.0
 0.0 0.0
 1.0000 0.0000 0.0000  100.0000

@@ -154,7 +154,7 @@ Geode* ChessUtils::createRectangleWithTexture(Vec3 centerPosition, Image* image,
 	texcoords->push_back(Vec2(1.0f, 1.0f));
 	texcoords->push_back(Vec2(0.0f, 1.0f));
 
-	osg::Vec4Array* colors = new osg::Vec4Array;
+	Vec4Array* colors = new Vec4Array();
 	colors->push_back(color);
 
 	Geometry* quad = new Geometry();

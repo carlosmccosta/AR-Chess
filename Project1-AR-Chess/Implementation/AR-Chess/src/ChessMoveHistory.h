@@ -15,22 +15,29 @@ using osg::Referenced;
 
 class ChessMoveHistory : public Referenced {
 	public:
-		ChessMoveHistory(ChessPiece* pieceMoved, Vec2i pieceMovedOriginPosition, ChessPiece* pieceRemoved = NULL);
+		ChessMoveHistory(ChessPiece* pieceMoved, Vec2i pieceMovedOriginPosition, Vec2i pieceMovedDestinationPosition,
+			double whitePlayerGameTimerD = 0, double blackPlayerGameTimerD = 0, ChessPiece* pieceRemoved = NULL);
 		virtual ~ChessMoveHistory();
 
+		void moveBackInHistory();
+		void moveFowardInHistory();
+
 		// ------------------------------------------------------------------------------  <gets | sets> -------------------------------------------------------------------------------
-		ChessPiece* isPieceMoved() const { return _pieceMoved; }
-		void setPieceMoved(ChessPiece* val) { _pieceMoved = val; }
-		Vec2i getPieceMovedOriginPosition() const { return _pieceMovedOriginPosition; }
-		void setPieceMovedOriginPosition(Vec2i val) { _pieceMovedOriginPosition = val; }
-		ChessPiece* getPieceRemoved() const { return _pieceRemoved; }
-		void setPieceRemoved(ChessPiece* val) { _pieceRemoved = val; }
+		ChessPiece* getPieceMoved() const { return _pieceMoved; }		
+		Vec2i getPieceMovedOriginPosition() const { return _pieceMovedOriginPosition; }		
+		Vec2i getPieceMovedDestinationPosition() const { return _pieceMovedDestinationPosition; }
+		double getWhitePlayerGameTimerD() const { return _whitePlayerGameTimerD; }
+		double getBlackPlayerGameTimerD() const { return _blackPlayerGameTimerD; }
+		ChessPiece* getPieceRemoved() const { return _pieceRemoved; }		
 		// ------------------------------------------------------------------------------  </gets | sets> ------------------------------------------------------------------------------
 
 
 	private:
 		ChessPiece* _pieceMoved;		
-		Vec2i _pieceMovedOriginPosition;		
-		ChessPiece* _pieceRemoved;		
+		Vec2i _pieceMovedOriginPosition;
+		Vec2i _pieceMovedDestinationPosition;		
+		double _whitePlayerGameTimerD;				
+		double _blackPlayerGameTimerD;				
+		ChessPiece* _pieceRemoved;
 };
 

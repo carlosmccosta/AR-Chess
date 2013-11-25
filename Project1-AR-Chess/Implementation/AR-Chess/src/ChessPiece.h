@@ -9,7 +9,7 @@
 
 // project includes
 #include "ChessUtils.h"
-#include "ModelsConfigs.h"
+#include "Configs.h"
 
 
 // namespace specific imports to avoid namespace pollution
@@ -46,6 +46,7 @@ class ChessPiece : public osg::Referenced {
 		void changePosition(int xPosition, int yPosition);
 		void resetPosition();
 		void removePieceFromBoard();
+		void reinsertPieceOnBoard();
 
 		static ChessPieceColor getOpponentChessPieceColor(ChessPieceColor chessPieceColor);
 

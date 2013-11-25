@@ -23,7 +23,7 @@
 #include <osgDB/ReadFile>
 
 // project includes
-#include "ModelsConfigs.h"
+#include "Configs.h"
 
 // namespace specific imports to avoid namespace pollution
 using std::string;
@@ -37,6 +37,7 @@ using osg::Vec4;
 using osg::Quat;
 using osg::Vec2Array;
 using osg::Vec3Array;
+using osg::Vec4Array;
 using osg::Matrix;
 using osg::MatrixTransform;
 using osg::Node;

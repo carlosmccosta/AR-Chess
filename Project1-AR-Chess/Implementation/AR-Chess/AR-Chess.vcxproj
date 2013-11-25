@@ -88,7 +88,7 @@
     <ClInclude Include="src\ChessPiece.h" />
     <ClInclude Include="src\ChessScene.h" />
     <ClInclude Include="src\ChessUtils.h" />
-    <ClInclude Include="src\ModelsConfigs.h" />
+    <ClInclude Include="src\Configs.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

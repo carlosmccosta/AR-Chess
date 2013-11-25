@@ -25,7 +25,7 @@
 #include <string>
 
 // project includes
-#include "ModelsConfigs.h"
+#include "Configs.h"
 
 
 // namespace specific imports to avoid namespace pollution
@@ -74,7 +74,7 @@ class EmitterUpdateCallback : public NodeCallback {
 class CloudParticleSystem : public Group {
 	public:
 		CloudParticleSystem(Group* scene, MatrixTransform* boardTrackerMT, MatrixTransform* selectorTrackerMT,
-			string particleTextureFile = TRACKER_SELECTOR_PARTICLE,
+			string particleTextureFile = TRACKER_SELECTOR_PARTICLE_IMG,
 			bool useEmissiveParticles = true,
 			bool useLightingInParticles = true,
 			rangef particleSizeRange = rangef(2.0f, 14.0f),

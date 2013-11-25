@@ -15,7 +15,7 @@
 // project includes
 #include "ChessUtils.h"
 #include "ChessPiece.h"
-#include "ModelsConfigs.h"
+#include "Configs.h"
 #include "ChessMoveHistory.h"
 
 
@@ -26,6 +26,7 @@ using osg::Vec2i;
 using osg::Vec2Array;
 using osg::Vec3;
 using osg::Vec3f;
+using osg::Vec4Array;
 using osg::Image;
 using osg::ElapsedTime;
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  </includes> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -57,6 +58,12 @@ class ChessBoard : public osg::Referenced {
 	public:
 		ChessBoard();
 		virtual ~ChessBoard();
+
+		void setupImages();
+		void setupMaterials();
+		void setupNewGameSelectors();
+		void setupGameHistoryManipulators();
+
 		osgShadow::ShadowedScene* setupBoard();
 		osgShadow::ShadowedScene* resetBoard();
 		void setupBoardPieces();
@@ -65,10 +72,10 @@ class ChessBoard : public osg::Referenced {
 		MatrixTransform* setupAuxiliarySelector(Vec2i position, Image* image,
 			Vec3 translateOffset = Vec3(AUXILIARY_SELECTORS_X_OFFSET, AUXILIARY_SELECTORS_Y_OFFSET, 0),
 			float rotationAngle = 0,
-			Vec3 scale = Vec3(AUXILIARY_SELECTORS_IMAGE_SCALE, AUXILIARY_SELECTORS_IMAGE_SCALE, AUXILIARY_SELECTORS_IMAGE_SCALE));
+			Vec3 scale = Vec3(NEW_GAME_IMGS_SCALE, NEW_GAME_IMGS_SCALE, NEW_GAME_IMGS_SCALE));		
 
 		bool updateBoard(Vec2i selectorBoardPosition);						
-		void updatePlayersGameTimers();
+		void updatePlayersGameTimers(bool forceUpdate = false);
 		void processAuxiliarySelector(AuxiliarySelector auxiliarySelector);
 		bool processFirstSelection(Vec2i selectorBoardPosition, AuxiliarySelector auxiliarySelector = SELECTOR_INVALID);
 		bool processSecondSelection(Vec2i selectorBoardPosition, AuxiliarySelector auxiliarySelector = SELECTOR_INVALID);
@@ -86,22 +93,28 @@ class ChessBoard : public osg::Referenced {
 		bool updatePossibleMoves(int xBoardPosition, int yBoardPosition, ChessPieceColor chessPieceColor, Vec2Array* possibleMoves);		
 		MovePositionStatus isPositionAvailableToReceiveMove(int xBoardPosition, int yBoardPosition, ChessPieceColor currentPlayer);
 
-		void moveChessPieceWithAnimation(ChessPiece* chessPiece, Vec2 finalPosition);
-		void removeChessPieceWithAnimation(Vec2 boardPositionOfPieceToRemove, ChessPieceColor chessPieceColor);
+		void moveChessPieceWithAnimation(ChessPiece* chessPiece, Vec2i finalPosition);
+		ChessPiece* removeChessPieceWithAnimation(Vec2i boardPositionOfPieceToRemove, ChessPieceColor chessPieceColor);
+
+		bool goToPreviousMoveInHistory();
+		bool goToNextMoveInHistory();
+		void updateHistoryManipulatorsVisibility();
+
+		void switchPlayer();
 
 		bool isPositionValid(int position);
 		AuxiliarySelector isPositionAnAuxiliarySelector(Vec2i position);
-		ChessPiece* getChessPieceAtBoardPosition(int xBoardPosition, int yBoardPosition, ChessPieceColor chessPieceColor);
-
+		ChessPiece* getChessPieceAtBoardPosition(int xBoardPosition, int yBoardPosition, ChessPieceColor chessPieceColor);		
 
 	private:
 		vector<ChessPiece*> _whiteChessPieces;
 		vector<ChessPiece*> _blackChessPieces;
-		vector<ChessMoveHistory*> _pieceMovesHistory;
+		vector<ChessMoveHistory*> _pieceMovesHistoryBackwardsStack;
+		vector<ChessMoveHistory*> _pieceMovesHistoryFowardStack;
 		ChessPieceColor _currentPlayer;
 		ChessPiece* _pieceToMove;
-		Vec2 _moveOriginPosition;
-		Vec2 _moveDestinationPosition;
+		Vec2i _moveOriginPosition;
+		Vec2i _moveDestinationPosition;
 
 		osgShadow::ShadowedScene* _boardShadowedScene;
 		Material* _boardMaterial;
@@ -128,14 +141,22 @@ class ChessBoard : public osg::Referenced {
 		double _blackPlayerGameTimerD;
 		Geode* _whitePlayerStatus;
 		Geode* _blackPlayerStatus;
-		Text3D* _whitePlayerGameTimerText;		
+		Text3D* _whitePlayerGameTimerText;
 		Text3D* _blackPlayerGameTimerText;
+		Geometry* _moveBackwardsInHistorySelectorWhiteSide;
+		Geometry* _moveBackwardsInHistorySelectorBlackSide;
+		Geometry* _moveFowardInHistorySelectorWhiteSide;
+		Geometry* _moveFowardInHistorySelectorBlackSide;		
 
-		Image* _newGameHH;
-		Image* _newGameHHSelected;
-		Image* _newGameHC;
-		Image* _newGameHCSelected;
-		Image* _newGameCC;
-		Image* _newGameCCSelected;
+		Image* _newGameHHImg;
+		Image* _newGameHHSelectedImg;
+		Image* _newGameHCImg;
+		Image* _newGameHCSelectedImg;
+		Image* _newGameCCImg;
+		Image* _newGameCCSelectedImg;
+		Image* _previousMoveImg;
+		Image* _previousMoveSelectedImg;
+		Image* _nextMoveImg;
+		Image* _nextMoveSelectedImg;
 };
 
