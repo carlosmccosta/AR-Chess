@@ -2,7 +2,7 @@
 6
 
 #marker 1
-Data/multi/patt.a
+Data/multi/a.patt
 40.0
 0.0 0.0
 1.0000 0.0000 0.0000 -100.0000
@@ -10,7 +10,7 @@ Data/multi/patt.a
 0.0000 0.0000 1.0000    0.0000
 
 #marker 2
-Data/multi/patt.b
+Data/multi/b.patt
 40.0
 0.0 0.0
 1.0000 0.0000 0.0000    0.0000
@@ -18,7 +18,7 @@ Data/multi/patt.b
 0.0000 0.0000 1.0000    0.0000
 
 #marker 3
-Data/multi/patt.c
+Data/multi/c.patt
 40.0
 0.0 0.0
 1.0000 0.0000 0.0000  100.0000
@@ -26,7 +26,7 @@ Data/multi/patt.c
 0.0000 0.0000 1.0000    0.0000
 
 #marker 4
-Data/multi/patt.d
+Data/multi/d.patt
 40.0
 0.0 0.0
 1.0000 0.0000 0.0000 -100.0000
@@ -34,7 +34,7 @@ Data/multi/patt.d
 0.0000 0.0000 1.0000    0.0000
 
 #marker 5
-Data/multi/patt.g
+Data/multi/g.patt
 40.0
 0.0 0.0
 1.0000 0.0000 0.0000    0.0000
@@ -42,7 +42,7 @@ Data/multi/patt.g
 0.0000 0.0000 1.0000    0.0000
 
 #marker 6
-Data/multi/patt.f
+Data/multi/f.patt
 40.0
 0.0 0.0
 1.0000 0.0000 0.0000  100.0000

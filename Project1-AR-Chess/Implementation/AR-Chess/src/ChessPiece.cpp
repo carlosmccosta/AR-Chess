@@ -8,7 +8,8 @@ ChessPiece::ChessPiece(ChessPieceType chessPieceType, ChessPieceColor chessPiece
 	_yPosition(yPosition),
 	_xInitialPosition(xPosition),
 	_yInitialPosition(yPosition),
-	_piecePlayable(true) {
+	_piecePlayable(true),
+	_pieceMovedPreviously(false) {
 
 	// necessary parameters to position piece in board
 	string name = getPieceModelPath(chessPieceType, chessPieceColor);
@@ -120,6 +121,7 @@ float ChessPiece::getPieceModelSize(ChessPieceType chessPieceType) {
 void ChessPiece::changePosition(int xPosition, int yPosition) {
 	_xPosition = xPosition;
 	_yPosition = yPosition;
+	_pieceMovedPreviously = true;
 
 	Vec3f finalPieceScenePosition = ChessUtils::computePieceScenePosition(xPosition, yPosition);
 
@@ -131,6 +133,8 @@ void ChessPiece::changePosition(int xPosition, int yPosition) {
 
 void ChessPiece::resetPosition() {
 	changePosition(_xInitialPosition, _yInitialPosition);
+	_pieceMovedPreviously = false;
+	_piecePlayable = true;
 }
 
 

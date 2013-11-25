@@ -51,18 +51,14 @@ class ChessPiece : public osg::Referenced {
 		static ChessPieceColor getOpponentChessPieceColor(ChessPieceColor chessPieceColor);
 
 		// ------------------------------------------------------------------------------  <gets | sets> -------------------------------------------------------------------------------
-		ChessPieceType getChessPieceType() const { return _chessPieceType; }
-		void setChessPieceType(ChessPieceType val) { _chessPieceType = val; }
-		ChessPieceColor getChessPieceColor() const { return _chessPieceColor; }
-		void setChessPieceColor(ChessPieceColor val) { _chessPieceColor = val; }
-		int getXPosition() const { return _xPosition; }
-		void setXPosition(int val) { _xPosition = val; }
-		int getYPosition() const { return _yPosition; }
-		void setYPosition(int val) { _yPosition = val; }
-		bool isPiecePlayable() const { return _piecePlayable; }
-		void setPiecePlayable(bool val) { _piecePlayable = val; }
+		ChessPieceType getChessPieceType() const { return _chessPieceType; }		
+		ChessPieceColor getChessPieceColor() const { return _chessPieceColor; }		
+		int getXPosition() const { return _xPosition; }		
+		int getYPosition() const { return _yPosition; }		
+		bool isPiecePlayable() const { return _piecePlayable; }		
 		MatrixTransform* getPieceMatrixTransform() const { return _pieceMatrixTransform; }
-		void setPieceMatrixTransform(MatrixTransform* val) { _pieceMatrixTransform = val; }
+		bool hasPieceMovedPreviously() const { return _pieceMovedPreviously; }
+		void setPieceMovedPreviously(bool val) { _pieceMovedPreviously = val; }
 		// ------------------------------------------------------------------------------  </gets | sets> ------------------------------------------------------------------------------
 
 	private:
@@ -73,7 +69,8 @@ class ChessPiece : public osg::Referenced {
 		Vec3f _pieceCurrentScenePosition;
 		int _xInitialPosition;
 		int _yInitialPosition;
-		bool _piecePlayable;		
+		bool _piecePlayable;
+		bool _pieceMovedPreviously;
 		MatrixTransform* _pieceMatrixTransform;
 };
 

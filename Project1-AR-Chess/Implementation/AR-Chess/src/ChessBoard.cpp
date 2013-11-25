@@ -414,10 +414,12 @@ bool ChessBoard::processSecondSelection(Vec2i selectorBoardPosition, AuxiliarySe
 		// remove opponent piece if necessary
 		if (movePositionStatus == POSITION_WITH_OPPONENT_PIECE) {
 			ChessPiece* pieceRemoved = removeChessPieceWithAnimation(_moveDestinationPosition, _currentPlayer);			
-			_pieceMovesHistoryBackwardsStack.push_back(new ChessMoveHistory(_pieceToMove, _moveOriginPosition, _moveDestinationPosition, _whitePlayerGameTimerD, _blackPlayerGameTimerD, pieceRemoved));
+			_pieceMovesHistoryBackwardsStack.push_back(new ChessMoveHistory(_pieceToMove, _moveOriginPosition, _moveDestinationPosition,
+				_pieceToMove->hasPieceMovedPreviously(), _whitePlayerGameTimerD, _blackPlayerGameTimerD, pieceRemoved));
 			
 		} else {
-			_pieceMovesHistoryBackwardsStack.push_back(new ChessMoveHistory(_pieceToMove, _moveOriginPosition, _moveDestinationPosition, _whitePlayerGameTimerD, _blackPlayerGameTimerD));
+			_pieceMovesHistoryBackwardsStack.push_back(new ChessMoveHistory(_pieceToMove, _moveOriginPosition, _moveDestinationPosition,
+				_pieceToMove->hasPieceMovedPreviously(), _whitePlayerGameTimerD, _blackPlayerGameTimerD));
 		}
 
 		// animate piece movement to final destination
@@ -676,15 +678,20 @@ MovePositionStatus ChessBoard::isPositionAvailableToReceiveMove(int xBoardPositi
 
 
 
-void ChessBoard::moveChessPieceWithAnimation(ChessPiece* chessPiece, Vec2i finalPosition) {
+void ChessBoard::moveChessPieceWithAnimation(ChessPiece* chessPieceToMove, Vec2i finalPosition) {
 	// reset positions to next piece move
 	_moveOriginPosition.x() = 0;
 	_moveOriginPosition.y() = 0;
 	_moveDestinationPosition.x() = 0;
 	_moveDestinationPosition.y() = 0;
-	
-	chessPiece->changePosition(finalPosition.x(), finalPosition.y());
+		
+	if (!checkAndPerformCastling(chessPieceToMove, finalPosition)) {
+		chessPieceToMove->changePosition(finalPosition.x(), finalPosition.y());
+	} else {
+		_pieceMovesHistoryBackwardsStack.back()->setPerformedCastling(true);
+	}
 
+	_pieceMovesHistoryFowardStack.clear();
 	updateHistoryManipulatorsVisibility();
 }
 
@@ -696,10 +703,82 @@ ChessPiece* ChessBoard::removeChessPieceWithAnimation(Vec2i boardPositionOfPiece
 }
 
 
+bool ChessBoard::checkAndPerformCastling(ChessPiece* king, Vec2i finalPosition) {
+	if (isCastlingPossible(king, finalPosition)) {
+		ChessPiece* rook = getChessPieceAtBoardPosition((finalPosition.x() == 3 ? 4 : -4), king->getYPosition(), king->getChessPieceColor());
+
+		// move king
+		king->changePosition(finalPosition.x(), finalPosition.y());
+
+		// move rook
+		rook->changePosition((finalPosition.x() == 3 ? 2 : -1), finalPosition.y());
+		return true;
+	}
+
+	return false;
+}
+
+
+bool ChessBoard::isCastlingPossible(ChessPiece* king, Vec2i kingFinalPosition) {
+	// castling can only be done by the king and a rook if none of then has moved, and there is no pieces between then
+	if (king->getChessPieceType() == KING && !king->hasPieceMovedPreviously()) {				
+		if (kingFinalPosition.x() == 3) {
+			// check if there are pieces blocking the castling
+			if (getChessPieceAtBoardPosition(2, king->getYPosition(), WHITE) != NULL || getChessPieceAtBoardPosition(2, king->getYPosition(), BLACK) != NULL ||
+				getChessPieceAtBoardPosition(3, king->getYPosition(), WHITE) != NULL || getChessPieceAtBoardPosition(3, king->getYPosition(), BLACK) != NULL) {
+				return false;
+			}
+
+			// check if the rook hasn't move
+			ChessPiece* rookRightSide = getChessPieceAtBoardPosition(4, king->getYPosition(), king->getChessPieceColor());
+			if (rookRightSide == NULL || rookRightSide->hasPieceMovedPreviously()) {
+				return false;
+			}
+				
+			// TODO check if any position from the king to the final position is attacked	
+			
+			return true;
+		} else if (kingFinalPosition.x() == -2) {
+			// check if there are pieces blocking the castling
+			if (getChessPieceAtBoardPosition(-1, king->getYPosition(), WHITE) != NULL || getChessPieceAtBoardPosition(-1, king->getYPosition(), BLACK) != NULL ||
+				getChessPieceAtBoardPosition(-2, king->getYPosition(), WHITE) != NULL || getChessPieceAtBoardPosition(-2, king->getYPosition(), BLACK) != NULL ||
+				getChessPieceAtBoardPosition(-3, king->getYPosition(), WHITE) != NULL || getChessPieceAtBoardPosition(-3, king->getYPosition(), BLACK) != NULL) {
+				return false;
+			}
+
+			// check if the rook hasn't move
+			ChessPiece* rookRightSide = getChessPieceAtBoardPosition(-4, king->getYPosition(), king->getChessPieceColor());
+			if (rookRightSide == NULL || rookRightSide->hasPieceMovedPreviously()) {
+				return false;
+			}
+
+			// TODO check if any position from the king to the final position is attacked	
+
+			return true;
+		}
+	}
+
+	return false;
+}
+
+
 bool ChessBoard::goToPreviousMoveInHistory() {
 	if (!_pieceMovesHistoryBackwardsStack.empty()) {
 		ChessMoveHistory* moveBackInfo = _pieceMovesHistoryBackwardsStack.back();		
+		
+		// move rook to original position
+		if (moveBackInfo->hasPerformedCastling()) {
+			ChessPiece* king = moveBackInfo->getPieceMoved();
+			ChessPiece* rook = getChessPieceAtBoardPosition((king->getXPosition() == 3 ? 2 : -1), king->getYPosition(), king->getChessPieceColor());
+
+			if (rook != NULL) {
+				rook->changePosition((king->getXPosition() == 3 ? 4 : -4), king->getYPosition());
+			}
+		}
+		
+		// move king to original position
 		moveBackInfo->moveBackInHistory();
+
 		_pieceMovesHistoryFowardStack.push_back(moveBackInfo);
 		_pieceMovesHistoryBackwardsStack.pop_back();
 
@@ -724,8 +803,21 @@ bool ChessBoard::goToPreviousMoveInHistory() {
 
 bool ChessBoard::goToNextMoveInHistory() {
 	if (!_pieceMovesHistoryFowardStack.empty()) {
-		ChessMoveHistory* moveFowardInfo = _pieceMovesHistoryFowardStack.back();		
+		ChessMoveHistory* moveFowardInfo = _pieceMovesHistoryFowardStack.back();				
+
+		// move rook to destination position
+		if (moveFowardInfo->hasPerformedCastling()) {
+			ChessPiece* king = moveFowardInfo->getPieceMoved();
+			ChessPiece* rook = getChessPieceAtBoardPosition((moveFowardInfo->getPieceMovedDestinationPosition().x() == 3 ? 4 : -4), king->getYPosition(), king->getChessPieceColor());
+
+			if (rook != NULL) {
+				rook->changePosition((moveFowardInfo->getPieceMovedDestinationPosition().x() == 3 ? 2 : -1), king->getYPosition());
+			}
+		}
+
+		// move king to destination position
 		moveFowardInfo->moveFowardInHistory();
+
 		_pieceMovesHistoryBackwardsStack.push_back(moveFowardInfo);
 		_pieceMovesHistoryFowardStack.pop_back();
 

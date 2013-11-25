@@ -15,7 +15,7 @@ using osg::Referenced;
 
 class ChessMoveHistory : public Referenced {
 	public:
-		ChessMoveHistory(ChessPiece* pieceMoved, Vec2i pieceMovedOriginPosition, Vec2i pieceMovedDestinationPosition,
+		ChessMoveHistory(ChessPiece* pieceMoved, Vec2i pieceMovedOriginPosition, Vec2i pieceMovedDestinationPosition, bool pieceHasMovedPriviously,
 			double whitePlayerGameTimerD = 0, double blackPlayerGameTimerD = 0, ChessPiece* pieceRemoved = NULL);
 		virtual ~ChessMoveHistory();
 
@@ -28,7 +28,9 @@ class ChessMoveHistory : public Referenced {
 		Vec2i getPieceMovedDestinationPosition() const { return _pieceMovedDestinationPosition; }
 		double getWhitePlayerGameTimerD() const { return _whitePlayerGameTimerD; }
 		double getBlackPlayerGameTimerD() const { return _blackPlayerGameTimerD; }
-		ChessPiece* getPieceRemoved() const { return _pieceRemoved; }		
+		ChessPiece* getPieceRemoved() const { return _pieceRemoved; }
+		bool hasPerformedCastling() const { return _performedCastling; }
+		void setPerformedCastling(bool val) { _performedCastling = val; }
 		// ------------------------------------------------------------------------------  </gets | sets> ------------------------------------------------------------------------------
 
 
@@ -36,8 +38,10 @@ class ChessMoveHistory : public Referenced {
 		ChessPiece* _pieceMoved;		
 		Vec2i _pieceMovedOriginPosition;
 		Vec2i _pieceMovedDestinationPosition;		
+		bool _pieceHasMovedPriviously;
 		double _whitePlayerGameTimerD;				
-		double _blackPlayerGameTimerD;				
+		double _blackPlayerGameTimerD;		
 		ChessPiece* _pieceRemoved;
+		bool _performedCastling;		
 };
 

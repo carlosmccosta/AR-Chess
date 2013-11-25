@@ -93,8 +93,10 @@ class ChessBoard : public osg::Referenced {
 		bool updatePossibleMoves(int xBoardPosition, int yBoardPosition, ChessPieceColor chessPieceColor, Vec2Array* possibleMoves);		
 		MovePositionStatus isPositionAvailableToReceiveMove(int xBoardPosition, int yBoardPosition, ChessPieceColor currentPlayer);
 
-		void moveChessPieceWithAnimation(ChessPiece* chessPiece, Vec2i finalPosition);
+		void moveChessPieceWithAnimation(ChessPiece* chessPieceToMove, Vec2i finalPosition);
 		ChessPiece* removeChessPieceWithAnimation(Vec2i boardPositionOfPieceToRemove, ChessPieceColor chessPieceColor);
+		bool checkAndPerformCastling(ChessPiece* chessPieceToMove, Vec2i finalPosition);
+		bool isCastlingPossible(ChessPiece* king, Vec2i kingFinalPosition);
 
 		bool goToPreviousMoveInHistory();
 		bool goToNextMoveInHistory();
