@@ -16,6 +16,7 @@ ChessPiece::ChessPiece(ChessPieceType chessPieceType, ChessPieceColor chessPiece
 	_pieceMaterial(material) {
 
 	_pieceMatrixTransform = new MatrixTransform();
+	_pieceCurrentScenePosition = ChessUtils::computePieceScenePosition(xPosition, yPosition);
 	loadPieceModel(chessPieceType, scaleFactor, translateOffset);
 }
 
@@ -27,8 +28,7 @@ void ChessPiece::loadPieceModel(ChessPieceType chessPieceType, Vec3 scaleFactor,
 
 	// necessary parameters to position piece in board
 	string name = getPieceModelPath(chessPieceType, _chessPieceColor);
-	float modelSize = getPieceModelSize(chessPieceType);
-	_pieceCurrentScenePosition = ChessUtils::computePieceScenePosition(_xPosition, _yPosition);
+	float modelSize = getPieceModelSize(chessPieceType);	
 	_pieceCurrentScenePosition.x() += translateOffset.x();
 	_pieceCurrentScenePosition.y() += translateOffset.y();
 	_pieceCurrentScenePosition.z() += translateOffset.z();
@@ -176,15 +176,15 @@ void ChessPiece::changePosition(int xPosition, int yPosition, int playNumber) {
 
 
 void ChessPiece::resetPosition() {
+	if (_chessPieceType != _chessPieceInitialType) {
+		loadPieceModel(_chessPieceInitialType);
+	}
+
 	changePosition(_xInitialPosition, _yInitialPosition);
 	_pieceMovedPreviously = false;
 	_piecePlayable = true;
 	_pawnMakeDoubleStep = false;
-	_playNumberOfLastMove = -1;
-
-	if (_chessPieceType != _chessPieceInitialType) {
-		loadPieceModel(_chessPieceInitialType);
-	}
+	_playNumberOfLastMove = -1;	
 }
 
 

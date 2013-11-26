@@ -23,7 +23,7 @@
 using std::vector;
 using osg::MatrixTransform;
 using osg::Vec2i;
-using osg::Vec2Array;
+using osg::Vec2iArray;
 using osg::Vec3;
 using osg::Vec3f;
 using osg::Vec4Array;
@@ -36,7 +36,8 @@ enum MovePositionStatus {
 	POSITION_AVAILABLE,
 	POSITION_WITH_OPPONENT_PIECE,
 	POSITION_WITH_PLAYER_PIECE,
-	SAME_POSITION_AS_ORIGIN
+	SAME_POSITION_AS_ORIGIN,
+	POSITION_INVALID
 };
 
 enum AuxiliarySelector {
@@ -96,11 +97,13 @@ class ChessBoard : public osg::Referenced {
 		void clearPromotionPieces();
 
 		bool hightLighPosition(int xBoardPosition, int yBoardPosition, AuxiliarySelector auxiliarySelector = SELECTOR_INVALID);
+		bool hightLighPossibleMove(int xBoardPosition, int yBoardPosition);
 		ChessPiece* selectPosition(int xBoardPosition, int yBoardPosition, ChessPieceColor chessPieceColor, bool selectOnlyIfExistsPiece = false, AuxiliarySelector auxiliarySelector = SELECTOR_INVALID);
 		bool showPossibleMoves(ChessPiece* chessPiece);
-		Vec2Array* computePossibleMovePositions(ChessPiece* chessPiece);
-		bool updatePossibleMoves(int xBoardPosition, int yBoardPosition, ChessPieceColor chessPieceColor, Vec2Array* possibleMoves);		
-		MovePositionStatus isPositionAvailableToReceiveMove(int xBoardPosition, int yBoardPosition, ChessPieceColor currentPlayer);
+		Vec2iArray* computePossibleMovePositions(ChessPiece* chessPiece);
+		bool updateKingOrKnightPossibleMoves(Vec2i initialPosition, Vec2i finalPosition, ChessPieceColor chessPieceColor, Vec2iArray* possibleMoves);
+		ChessPiece* updatePossibleMovesAlongLine(Vec2i initialPosition, int xIncrement, int yIncrement, ChessPieceColor chessPieceColor, Vec2iArray* possibleMoves);
+		MovePositionStatus isPositionAvailableToReceiveMove(Vec2i initialPosition, Vec2i finalPosition, ChessPieceColor currentPlayer);
 
 		void moveChessPieceWithAnimation(ChessPiece* chessPieceToMove, Vec2i finalPosition);
 		ChessPiece* removeChessPieceWithAnimation(Vec2i boardPositionOfPieceToRemove, ChessPieceColor chessPieceColor);
@@ -143,8 +146,9 @@ class ChessBoard : public osg::Referenced {
 		Material* _boardMaterial;
 		Material* _whitePiecesMaterial;
 		Material* _blackPiecesMaterial;
-		Image* _paddleSelectorImage;
-		Image* _paddleSelectedImage;
+		Image* _paddleSelectorImg;
+		Image* _paddleSelectedImg;
+		Image* _possibleMoveImg;
 		Vec2i _lastSelectorBoardPosition;
 		Font3D* _font3D;
 		
@@ -176,6 +180,8 @@ class ChessBoard : public osg::Referenced {
 		Geometry* _moveBackwardsInHistorySelectorBlackSide;
 		Geometry* _moveFowardInHistorySelectorWhiteSide;
 		Geometry* _moveFowardInHistorySelectorBlackSide;		
+
+		Vec2iArray* _pieceSelectedPossibleMoves;
 
 		Image* _newGameHHImg;
 		Image* _newGameHHSelectedImg;

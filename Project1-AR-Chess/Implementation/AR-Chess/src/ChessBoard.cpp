@@ -34,7 +34,8 @@ ChessBoard::ChessBoard() {
 	_playersPieces = new Group();
 	_playersTimers = new Group();
 	_boardSquareSelectorHighlights = new Group();
-	_boardSquareSelections = new Group();	
+	_boardSquareSelections = new Group();
+	_boardSquarePossibleMoves = new Group();
 	_promotionPieces = new Group();
 	
 	setupBoardPieces();
@@ -51,6 +52,7 @@ ChessBoard::ChessBoard() {
 	_boardShadowedScene->addChild(_playersTimers);
 	_boardShadowedScene->addChild(_boardSquareSelectorHighlights);
 	_boardShadowedScene->addChild(_boardSquareSelections);
+	_boardShadowedScene->addChild(_boardSquarePossibleMoves);
 	_boardShadowedScene->addChild(_promotionPieces);
 }
 
@@ -59,8 +61,9 @@ ChessBoard::~ChessBoard() {}
 
 void ChessBoard::setupImages() {
 	// images loading
-	_paddleSelectorImage = osgDB::readImageFile(PADDLE_SELECTOR_IMG);
-	_paddleSelectedImage = osgDB::readImageFile(PADDLE_SELECTED_IMG);
+	_paddleSelectorImg = osgDB::readImageFile(PADDLE_SELECTOR_IMG);
+	_paddleSelectedImg = osgDB::readImageFile(PADDLE_SELECTED_IMG);
+	_possibleMoveImg = osgDB::readImageFile(POSSIBLE_MOVE_IMG);
 	_newGameHHImg = osgDB::readImageFile(NEW_GAME_H_H_IMG);
 	_newGameHHSelectedImg = osgDB::readImageFile(NEW_GAME_H_H_SELECTED_IMG);
 	_newGameHCImg = osgDB::readImageFile(NEW_GAME_H_C_IMG);
@@ -160,7 +163,10 @@ osgShadow::ShadowedScene* ChessBoard::setupBoard() {
 	_piecePromotionConversionInProgress = false;
 	_piecePromotionConversionFromHistoryInProgress = false;
 	_piecePromotionReversionInProgress = false;
-	
+
+	_pieceMovesHistoryBackwardsStack.clear();
+	_pieceMovesHistoryFowardStack.clear();
+	updateHistoryManipulatorsVisibility();	
 
 	updatePlayerStatus(_whitePlayerGameTimerText, _blackPlayerGameTimerText);	
 
@@ -179,6 +185,8 @@ osgShadow::ShadowedScene* ChessBoard::resetBoard() {
 	}
 
 	clearSelections();
+	clearPromotionPieces();
+
 	_animationDelayBetweenMoves->reset();
 	_whitePlayerGameTimerText->setText(ChessUtils::formatSecondsToDate(0));
 	_blackPlayerGameTimerText->setText(ChessUtils::formatSecondsToDate(0));
@@ -427,7 +435,7 @@ bool ChessBoard::processFirstSelection(Vec2i selectorBoardPosition, AuxiliarySel
 		_moveOriginPosition.x() = selectorBoardPosition.x();
 		_moveOriginPosition.y() = selectorBoardPosition.y();
 		clearHighlights();
-		_selectorTimer->reset();
+		showPossibleMoves(_pieceToMove);
 		return true;
 	} else {
 		return false;
@@ -436,21 +444,22 @@ bool ChessBoard::processFirstSelection(Vec2i selectorBoardPosition, AuxiliarySel
 
 
 bool ChessBoard::processSecondSelection(Vec2i selectorBoardPosition, AuxiliarySelector auxiliarySelector) {
-	MovePositionStatus movePositionStatus = isPositionAvailableToReceiveMove(selectorBoardPosition.x(), selectorBoardPosition.y(), _currentPlayer);
+	MovePositionStatus movePositionStatus = isPositionAvailableToReceiveMove(_moveOriginPosition, selectorBoardPosition, _currentPlayer);
+
+	// invalid selection
+	if (movePositionStatus == POSITION_WITH_PLAYER_PIECE || movePositionStatus == POSITION_INVALID) {
+		return false;
+	}
 
 	// deselect position
 	if (movePositionStatus == SAME_POSITION_AS_ORIGIN) {
 		_moveOriginPosition.x() = 0;
 		_moveOriginPosition.y() = 0;
 		clearSelections();
+		clearPossibleMoves();
 		hightLighPosition(selectorBoardPosition.x(), selectorBoardPosition.y(), auxiliarySelector);
 		return false;
-	}
-
-	// invalid selection
-	if (movePositionStatus == POSITION_WITH_PLAYER_PIECE) {
-		return false;
-	}
+	}	
 
 	// second selection (if not defined yet)
 	if (_moveDestinationPosition.x() == 0 && (movePositionStatus == POSITION_AVAILABLE || movePositionStatus == POSITION_WITH_OPPONENT_PIECE)) {
@@ -477,6 +486,7 @@ bool ChessBoard::processSecondSelection(Vec2i selectorBoardPosition, AuxiliarySe
 		// animate piece movement to final destination
 		clearHighlights();
 		clearSelections();
+		clearPossibleMoves();
 		hightLighPosition(selectorBoardPosition.x(), selectorBoardPosition.y(), auxiliarySelector);
 		//selectPosition(selectorBoardPosition.x(), selectorBoardPosition.y(), _currentPlayer);
 		moveChessPieceWithAnimation(_pieceToMove, _moveDestinationPosition);		
@@ -609,7 +619,7 @@ bool ChessBoard::hightLighPosition(int xBoardPosition, int yBoardPosition, Auxil
 				Vec3f scenePosition = ChessUtils::computePieceScenePosition(xBoardPosition, yBoardPosition);
 				scenePosition.y() += (_currentPlayer == WHITE ? PROMOTION_PIECES_BOARD_OFFSET : -PROMOTION_PIECES_BOARD_OFFSET);
 				scenePosition.z() = BOARD_HIGHLIGHTS_HEIGHT_OFFSET;
-				_boardSquareSelectorHighlights->addChild(ChessUtils::createRectangleWithTexture(scenePosition, new Image(*_paddleSelectorImage)));
+				_boardSquareSelectorHighlights->addChild(ChessUtils::createRectangleWithTexture(scenePosition, new Image(*_paddleSelectorImg)));
 				break;
 			}
 		}
@@ -621,7 +631,19 @@ bool ChessBoard::hightLighPosition(int xBoardPosition, int yBoardPosition, Auxil
 	if (isPositionValid(xBoardPosition) && isPositionValid(yBoardPosition)) {
 		Vec3f scenePosition = ChessUtils::computePieceScenePosition(xBoardPosition, yBoardPosition);
 		scenePosition.z() = BOARD_HIGHLIGHTS_HEIGHT_OFFSET;
-		_boardSquareSelectorHighlights->addChild(ChessUtils::createRectangleWithTexture(scenePosition, new Image(*_paddleSelectorImage)));
+		_boardSquareSelectorHighlights->addChild(ChessUtils::createRectangleWithTexture(scenePosition, new Image(*_paddleSelectorImg)));
+		return true;
+	} else {
+		return false;
+	}
+}
+
+
+bool ChessBoard::hightLighPossibleMove(int xBoardPosition, int yBoardPosition) {
+	if (isPositionValid(xBoardPosition) && isPositionValid(yBoardPosition)) {
+		Vec3f scenePosition = ChessUtils::computePieceScenePosition(xBoardPosition, yBoardPosition);
+		scenePosition.z() = BOARD_HIGHLIGHTS_HEIGHT_OFFSET;
+		_boardSquarePossibleMoves->addChild(ChessUtils::createRectangleWithTexture(scenePosition, new Image(*_possibleMoveImg)));
 		return true;
 	} else {
 		return false;
@@ -640,7 +662,7 @@ ChessPiece* ChessBoard::selectPosition(int xBoardPosition, int yBoardPosition, C
 		scenePosition.z() = BOARD_SELECTIONS_HEIGHT_OFFSET;
 
 		MatrixTransform* selectionMT = new MatrixTransform();
-		selectionMT->addChild(ChessUtils::createRectangleWithTexture(Vec3(0,0,0), new Image(*_paddleSelectedImage)));
+		selectionMT->addChild(ChessUtils::createRectangleWithTexture(Vec3(0,0,0), new Image(*_paddleSelectedImg)));
 
 		if (chessPieceColor == BLACK) {
 			selectionMT->postMult(Matrix::rotate(osg::PI, osg::Z_AXIS));
@@ -656,50 +678,155 @@ ChessPiece* ChessBoard::selectPosition(int xBoardPosition, int yBoardPosition, C
 
 
 bool ChessBoard::showPossibleMoves(ChessPiece* chessPiece) {
+	clearPossibleMoves();
+	_pieceSelectedPossibleMoves = computePossibleMovePositions(_pieceToMove);
+
+	if (!_pieceSelectedPossibleMoves->empty()) {		
+		for (size_t i = 0; i < _pieceSelectedPossibleMoves->size(); ++i) {
+			hightLighPossibleMove(_pieceSelectedPossibleMoves->at(i).x(), _pieceSelectedPossibleMoves->at(i).y());
+		}
+
+		return true;
+	}
 
 	return false;
 }
 
 
-Vec2Array* ChessBoard::computePossibleMovePositions(ChessPiece* chessPiece) {
+Vec2iArray* ChessBoard::computePossibleMovePositions(ChessPiece* chessPiece) {
 	int xBoardPosition = chessPiece->getXPosition();
 	int yBoardPosition = chessPiece->getYPosition();
+	Vec2i pieceInitialPosition = Vec2i(xBoardPosition, yBoardPosition);
 	ChessPieceType chessPieceType = chessPiece->getChessPieceType();
 	ChessPieceColor chessPieceColor = chessPiece->getChessPieceColor();
 	ChessPieceColor opponentChessPieceColor = ChessPiece::getOpponentChessPieceColor(chessPieceColor);
 
-	Vec2Array* possibleMoves = new Vec2Array();
+	Vec2iArray* possibleMoves = new Vec2iArray();
 
 	switch (chessPieceType) {		
 		case KING: {
-			updatePossibleMoves(xBoardPosition - 1, yBoardPosition,		chessPieceColor, possibleMoves);
-			updatePossibleMoves(xBoardPosition - 1, yBoardPosition - 1, chessPieceColor, possibleMoves);
-			updatePossibleMoves(xBoardPosition,		yBoardPosition + 1, chessPieceColor, possibleMoves);
-			updatePossibleMoves(xBoardPosition + 1, yBoardPosition + 1,	chessPieceColor, possibleMoves);
-			updatePossibleMoves(xBoardPosition + 1, yBoardPosition,		chessPieceColor, possibleMoves);
-			updatePossibleMoves(xBoardPosition + 1, yBoardPosition - 1,	chessPieceColor, possibleMoves);
-			updatePossibleMoves(xBoardPosition,		yBoardPosition - 1,	chessPieceColor, possibleMoves);
-			updatePossibleMoves(xBoardPosition - 1, yBoardPosition - 1,	chessPieceColor, possibleMoves);
+			// normal moves
+			updateKingOrKnightPossibleMoves(pieceInitialPosition, Vec2i((xBoardPosition ==  1 ? xBoardPosition - 2 : xBoardPosition - 1),  yBoardPosition), chessPieceColor, possibleMoves);
+			updateKingOrKnightPossibleMoves(pieceInitialPosition, Vec2i((xBoardPosition ==  1 ? xBoardPosition - 2 : xBoardPosition - 1), (yBoardPosition == -1 ? yBoardPosition + 2 : yBoardPosition + 1)), chessPieceColor, possibleMoves);
+			updateKingOrKnightPossibleMoves(pieceInitialPosition, Vec2i( xBoardPosition,                                                  (yBoardPosition == -1 ? yBoardPosition + 2 : yBoardPosition + 1)), chessPieceColor, possibleMoves);
+			updateKingOrKnightPossibleMoves(pieceInitialPosition, Vec2i((xBoardPosition == -1 ? xBoardPosition + 2 : xBoardPosition + 1), (yBoardPosition == -1 ? yBoardPosition + 2 : yBoardPosition + 1)), chessPieceColor, possibleMoves);
+			updateKingOrKnightPossibleMoves(pieceInitialPosition, Vec2i((xBoardPosition == -1 ? xBoardPosition + 2 : xBoardPosition + 1),  yBoardPosition), chessPieceColor, possibleMoves);
+			updateKingOrKnightPossibleMoves(pieceInitialPosition, Vec2i((xBoardPosition == -1 ? xBoardPosition + 2 : xBoardPosition + 1), (yBoardPosition ==  1 ? yBoardPosition - 2 : yBoardPosition - 1)), chessPieceColor, possibleMoves);
+			updateKingOrKnightPossibleMoves(pieceInitialPosition, Vec2i( xBoardPosition,                                                  (yBoardPosition ==  1 ? yBoardPosition - 2 : yBoardPosition - 1)), chessPieceColor, possibleMoves);
+			updateKingOrKnightPossibleMoves(pieceInitialPosition, Vec2i((xBoardPosition ==  1 ? xBoardPosition - 2 : xBoardPosition - 1), (yBoardPosition ==  1 ? yBoardPosition - 2 : yBoardPosition - 1)), chessPieceColor, possibleMoves);
+
+			// left castling
+			Vec2i leftCastlingPosition = Vec2i(-2, chessPiece->getYPosition());
+			if (isCastlingPossible(chessPiece, leftCastlingPosition)) {
+				possibleMoves->push_back(leftCastlingPosition);
+			}
+
+			// right castling
+			Vec2i rightCastlingPosition = Vec2i(3, chessPiece->getYPosition());
+			if (isCastlingPossible(chessPiece, rightCastlingPosition)) {
+				possibleMoves->push_back(rightCastlingPosition);
+			}
+
 			break;
 		}
 
 		case QUEEN: {
+			// vertical moves
+			updatePossibleMovesAlongLine(pieceInitialPosition,  0,  1, chessPieceColor, possibleMoves);
+			updatePossibleMovesAlongLine(pieceInitialPosition,  0, -1, chessPieceColor, possibleMoves);
+			
+			// horizontal moves
+			updatePossibleMovesAlongLine(pieceInitialPosition, -1,  0, chessPieceColor, possibleMoves);
+			updatePossibleMovesAlongLine(pieceInitialPosition,  1,  0, chessPieceColor, possibleMoves);
+
+			// diagonal moves
+			updatePossibleMovesAlongLine(pieceInitialPosition, -1,  1, chessPieceColor, possibleMoves);
+			updatePossibleMovesAlongLine(pieceInitialPosition,  1,  1, chessPieceColor, possibleMoves);
+			updatePossibleMovesAlongLine(pieceInitialPosition,  1, -1, chessPieceColor, possibleMoves);
+			updatePossibleMovesAlongLine(pieceInitialPosition, -1, -1, chessPieceColor, possibleMoves);
+
 			break;
 		}
 
 		case ROOK: {
+			// vertical moves
+			updatePossibleMovesAlongLine(pieceInitialPosition, 0, 1, chessPieceColor, possibleMoves);
+			updatePossibleMovesAlongLine(pieceInitialPosition, 0, -1, chessPieceColor, possibleMoves);
+
+			// horizontal moves
+			updatePossibleMovesAlongLine(pieceInitialPosition, -1, 0, chessPieceColor, possibleMoves);
+			updatePossibleMovesAlongLine(pieceInitialPosition, 1, 0, chessPieceColor, possibleMoves);
+
 			break;
 		}
 
 		case KNIGHT: {
+			updateKingOrKnightPossibleMoves(pieceInitialPosition, Vec2i(((xBoardPosition ==  1 || xBoardPosition ==  2) ? xBoardPosition - 3 : xBoardPosition - 2), ( yBoardPosition == -1                          ? yBoardPosition + 2 : yBoardPosition + 1)), chessPieceColor, possibleMoves);
+			updateKingOrKnightPossibleMoves(pieceInitialPosition, Vec2i(( xBoardPosition ==  1                          ? xBoardPosition - 2 : xBoardPosition - 1), ((yBoardPosition == -1 || yBoardPosition == -2) ? yBoardPosition + 3 : yBoardPosition + 2)), chessPieceColor, possibleMoves);
+			updateKingOrKnightPossibleMoves(pieceInitialPosition, Vec2i(( xBoardPosition == -1                          ? xBoardPosition + 2 : xBoardPosition + 1), ((yBoardPosition == -1 || yBoardPosition == -2) ? yBoardPosition + 3 : yBoardPosition + 2)), chessPieceColor, possibleMoves);
+			updateKingOrKnightPossibleMoves(pieceInitialPosition, Vec2i(((xBoardPosition == -1 || xBoardPosition == -2) ? xBoardPosition + 3 : xBoardPosition + 2), ( yBoardPosition == -1                          ? yBoardPosition + 2 : yBoardPosition + 1)), chessPieceColor, possibleMoves);
+			updateKingOrKnightPossibleMoves(pieceInitialPosition, Vec2i(((xBoardPosition == -1 || xBoardPosition == -2) ? xBoardPosition + 3 : xBoardPosition + 2), ( yBoardPosition ==  1                          ? yBoardPosition - 2 : yBoardPosition - 1)), chessPieceColor, possibleMoves);
+			updateKingOrKnightPossibleMoves(pieceInitialPosition, Vec2i(( xBoardPosition == -1                          ? xBoardPosition + 2 : xBoardPosition + 1), ((yBoardPosition ==  1 || yBoardPosition ==  2) ? yBoardPosition - 3 : yBoardPosition - 2)), chessPieceColor, possibleMoves);
+			updateKingOrKnightPossibleMoves(pieceInitialPosition, Vec2i(( xBoardPosition ==  1                          ? xBoardPosition - 2 : xBoardPosition - 1), ((yBoardPosition ==  1 || yBoardPosition ==  2) ? yBoardPosition - 3 : yBoardPosition - 2)), chessPieceColor, possibleMoves);
+			updateKingOrKnightPossibleMoves(pieceInitialPosition, Vec2i(((xBoardPosition ==  1 || xBoardPosition ==  2) ? xBoardPosition - 3 : xBoardPosition - 2), ( yBoardPosition ==  1                          ? yBoardPosition - 2 : yBoardPosition - 1)), chessPieceColor, possibleMoves);
 			break;
 		}
 
 		case BISHOP: {
+			// diagonal moves
+			updatePossibleMovesAlongLine(pieceInitialPosition, -1, 1, chessPieceColor, possibleMoves);
+			updatePossibleMovesAlongLine(pieceInitialPosition, 1, 1, chessPieceColor, possibleMoves);
+			updatePossibleMovesAlongLine(pieceInitialPosition, 1, -1, chessPieceColor, possibleMoves);
+			updatePossibleMovesAlongLine(pieceInitialPosition, -1, -1, chessPieceColor, possibleMoves);
+
 			break;
 		}
 
 		case PAWN: {
+			// no piece in front of pawn
+			int pawnFrontPositionX = xBoardPosition;
+			int pawnFrontPositionY = (yBoardPosition == -1 ? yBoardPosition + 2 : yBoardPosition + 1);
+			
+			if (chessPieceColor == BLACK) {
+				pawnFrontPositionY = (yBoardPosition == 1 ? yBoardPosition - 2 : yBoardPosition - 1);
+			}
+			
+			Vec2i pawnFrontPosition = Vec2i(pawnFrontPositionX, pawnFrontPositionY);
+			if (getChessPieceAtBoardPosition(pawnFrontPositionX, pawnFrontPositionY, chessPieceColor) == NULL &&
+				getChessPieceAtBoardPosition(pawnFrontPositionX, pawnFrontPositionY, opponentChessPieceColor) == NULL) {
+				possibleMoves->push_back(pawnFrontPosition);
+			}
+
+
+			// capture left
+			int pawnLeftPositionX = (xBoardPosition == 1 ? xBoardPosition - 2 : xBoardPosition - 1);
+			int pawnLeftPositionY = (yBoardPosition == -1 ? yBoardPosition + 2 : yBoardPosition + 1);
+
+			if (chessPieceColor == BLACK) {
+				pawnLeftPositionY = (yBoardPosition == 1 ? yBoardPosition - 2 : yBoardPosition - 1);
+			}
+
+			Vec2i pawnLeftPosition = Vec2i(pawnLeftPositionX, pawnLeftPositionY);
+			if (getChessPieceAtBoardPosition(pawnLeftPositionX, pawnLeftPositionY, opponentChessPieceColor) != NULL ||
+				isEnPassantPawnCapturePossible(chessPiece, pawnLeftPosition, chessPieceColor)) {
+				possibleMoves->push_back(pawnLeftPosition);
+			}
+
+
+			// capture right
+			int pawnRightPositionX = (xBoardPosition == -1 ? xBoardPosition + 2 : xBoardPosition + 1);
+			int pawnRightPositionY = (yBoardPosition == -1 ? yBoardPosition + 2 : yBoardPosition + 1);
+
+			if (chessPieceColor == BLACK) {
+				pawnRightPositionY = (yBoardPosition == 1 ? yBoardPosition - 2 : yBoardPosition - 1);
+			}
+
+			Vec2i pawnRightPosition = Vec2i(pawnRightPositionX, pawnRightPositionY);
+			if (getChessPieceAtBoardPosition(pawnRightPositionX, pawnRightPositionY, opponentChessPieceColor) != NULL ||
+				isEnPassantPawnCapturePossible(chessPiece, pawnRightPosition, chessPieceColor)) {
+				possibleMoves->push_back(pawnRightPosition);
+			}
+
 			break;
 		}
 
@@ -712,9 +839,10 @@ Vec2Array* ChessBoard::computePossibleMovePositions(ChessPiece* chessPiece) {
 }
 
 
-bool ChessBoard::updatePossibleMoves(int xBoardPosition, int yBoardPosition, ChessPieceColor chessPieceColor, Vec2Array* possibleMoves) {
-	if (isPositionAvailableToReceiveMove(xBoardPosition, yBoardPosition, chessPieceColor)) {
-		possibleMoves->push_back(Vec2(yBoardPosition, yBoardPosition));
+bool ChessBoard::updateKingOrKnightPossibleMoves(Vec2i initialPosition, Vec2i finalPosition, ChessPieceColor chessPieceColor, Vec2iArray* possibleMoves) {
+	MovePositionStatus movePositionStatus = isPositionAvailableToReceiveMove(initialPosition, finalPosition, chessPieceColor);
+	if (movePositionStatus == POSITION_AVAILABLE || movePositionStatus == POSITION_WITH_OPPONENT_PIECE) {
+		possibleMoves->push_back(finalPosition);
 		return true;
 	}
 
@@ -722,13 +850,54 @@ bool ChessBoard::updatePossibleMoves(int xBoardPosition, int yBoardPosition, Che
 }
 
 
-MovePositionStatus ChessBoard::isPositionAvailableToReceiveMove(int xBoardPosition, int yBoardPosition, ChessPieceColor currentPlayer) {
-	if (xBoardPosition != _moveOriginPosition.x() || yBoardPosition != _moveOriginPosition.y()) {		
-		if (getChessPieceAtBoardPosition(xBoardPosition, yBoardPosition, currentPlayer) != NULL) {
+ChessPiece* ChessBoard::updatePossibleMovesAlongLine(Vec2i initialPosition, int xIncrement, int yIncrement, ChessPieceColor chessPieceColor, Vec2iArray* possibleMoves) {
+	Vec2i finalPosition = initialPosition;
+	ChessPieceColor opponentChessPieceColor = ChessPiece::getOpponentChessPieceColor(chessPieceColor);
+	ChessPiece* pieceInFinalPosition = NULL;
+
+	do {		
+		finalPosition.x() += xIncrement;
+		finalPosition.y() += yIncrement;
+
+		if (finalPosition.x() == 0) {
+			finalPosition.x() += xIncrement;
+		}
+
+		if (finalPosition.y() == 0) {
+			finalPosition.y() += yIncrement;
+		}
+
+		// reach board border
+		if (!isPositionValid(finalPosition.x()) || !isPositionValid(finalPosition.y())) {
+			return NULL;
+		}
+
+		// found piece with same color
+		pieceInFinalPosition = getChessPieceAtBoardPosition(finalPosition.x(), finalPosition.y(), chessPieceColor);		
+		if (pieceInFinalPosition != NULL) {
+			return pieceInFinalPosition;
+		}
+
+		// found opponent piece or empty square
+		pieceInFinalPosition = getChessPieceAtBoardPosition(finalPosition.x(), finalPosition.y(), opponentChessPieceColor);
+		possibleMoves->push_back(Vec2i(finalPosition.x(), finalPosition.y()));
+	} while (pieceInFinalPosition == NULL);
+
+	return pieceInFinalPosition;
+}
+
+
+MovePositionStatus ChessBoard::isPositionAvailableToReceiveMove(Vec2i initialPosition, Vec2i finalPosition, ChessPieceColor currentPlayer) {
+	if (!isPositionValid(finalPosition.x()) || !isPositionValid(finalPosition.y())) {
+		return POSITION_INVALID;
+	}
+
+	if (initialPosition.x() != finalPosition.x() || initialPosition.y() != finalPosition.y()) {
+		if (getChessPieceAtBoardPosition(finalPosition.x(), finalPosition.y(), currentPlayer) != NULL) {
 			return POSITION_WITH_PLAYER_PIECE;
 		}
 
-		if (getChessPieceAtBoardPosition(xBoardPosition, yBoardPosition, ChessPiece::getOpponentChessPieceColor(currentPlayer)) != NULL) {
+		if (getChessPieceAtBoardPosition(finalPosition.x(), finalPosition.y(), ChessPiece::getOpponentChessPieceColor(currentPlayer)) != NULL) {
 			return POSITION_WITH_OPPONENT_PIECE;
 		}
 

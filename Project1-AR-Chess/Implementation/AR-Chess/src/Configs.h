@@ -46,6 +46,7 @@
 
 #define PADDLE_SELECTOR_IMG "images/blue_circle.png"
 #define PADDLE_SELECTED_IMG "images/blue_and_orange_circle.png"
+#define POSSIBLE_MOVE_IMG "images/green_circle.png"
 #define PADDLE_TIME_TO_SELECT_POSITION 2000 
 
 #define WHITE_PLAYER_STATUS_IMG "images/white_player_status.png"
