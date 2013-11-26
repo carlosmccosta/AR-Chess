@@ -106,6 +106,7 @@ class ChessBoard : public osg::Referenced {
 		ChessPiece* removeChessPieceWithAnimation(Vec2i boardPositionOfPieceToRemove, ChessPieceColor chessPieceColor);
 		bool checkAndPerformCastling(ChessPiece* chessPieceToMove, Vec2i finalPosition);
 		bool isCastlingPossible(ChessPiece* king, Vec2i kingFinalPosition);
+		ChessPiece*  isEnPassantPawnCapturePossible(ChessPiece* chessPieceToMove, Vec2i finalPosition, ChessPieceColor currentPlayerPieceColor);
 		bool checkAndPerformPromotion(ChessPiece* chessPieceMoved, Vec2i finalPosition);
 		void setupPromotionPiecesOnBoad(ChessPieceColor chessPieceColor);
 		void managePromotionConversionAndReversion();
@@ -136,6 +137,7 @@ class ChessBoard : public osg::Referenced {
 		
 		Vec2i _moveOriginPosition;
 		Vec2i _moveDestinationPosition;
+		int _currentPlayNumber;
 
 		osgShadow::ShadowedScene* _boardShadowedScene;
 		Material* _boardMaterial;

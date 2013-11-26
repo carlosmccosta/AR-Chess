@@ -11,6 +11,8 @@ ChessPiece::ChessPiece(ChessPieceType chessPieceType, ChessPieceColor chessPiece
 	_yInitialPosition(yPosition),
 	_piecePlayable(true),
 	_pieceMovedPreviously(false),
+	_pawnMakeDoubleStep(false),
+	_playNumberOfLastMove(-1),
 	_pieceMaterial(material) {
 
 	_pieceMatrixTransform = new MatrixTransform();
@@ -149,10 +151,21 @@ float ChessPiece::getPieceModelSize(ChessPieceType chessPieceType) {
 }
 
 
-void ChessPiece::changePosition(int xPosition, int yPosition) {
+void ChessPiece::changePosition(int xPosition, int yPosition, int playNumber) {
 	_xPosition = xPosition;
 	_yPosition = yPosition;
+
+	if (!_pieceMovedPreviously && _chessPieceType == PAWN) {
+		if ((_chessPieceColor == WHITE && yPosition == -1) || (_chessPieceColor == BLACK && yPosition == 1)) {
+			_pawnMakeDoubleStep = true;
+		}
+	}
+
 	_pieceMovedPreviously = true;
+
+	if (playNumber != -1) {
+		_playNumberOfLastMove = playNumber;
+	}
 
 	Vec3f finalPieceScenePosition = ChessUtils::computePieceScenePosition(xPosition, yPosition);
 
@@ -166,6 +179,8 @@ void ChessPiece::resetPosition() {
 	changePosition(_xInitialPosition, _yInitialPosition);
 	_pieceMovedPreviously = false;
 	_piecePlayable = true;
+	_pawnMakeDoubleStep = false;
+	_playNumberOfLastMove = -1;
 
 	if (_chessPieceType != _chessPieceInitialType) {
 		loadPieceModel(_chessPieceInitialType);

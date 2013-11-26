@@ -16,7 +16,8 @@ using osg::Referenced;
 class ChessMoveHistory : public Referenced {
 	public:
 		ChessMoveHistory(ChessPiece* pieceMoved, Vec2i pieceMovedOriginPosition, Vec2i pieceMovedDestinationPosition, bool pieceHasMovedPriviously,
-			double whitePlayerGameTimerD = 0, double whitePlayerGameTimerDEndMove = 0, double blackPlayerGameTimerD = 0, double blackPlayerGameTimerDEndMove = 0, ChessPiece* pieceRemoved = NULL);
+			double whitePlayerGameTimerD = 0, double whitePlayerGameTimerDEndMove = 0, double blackPlayerGameTimerD = 0, double blackPlayerGameTimerDEndMove = 0,
+			int playNumberOfLastMove = -1, ChessPiece* pieceRemoved = NULL);
 		virtual ~ChessMoveHistory();
 
 		void moveBackInHistory();
@@ -54,6 +55,10 @@ class ChessMoveHistory : public Referenced {
 		ChessPiece* _pieceRemoved;
 		bool _performedCastling;
 		bool _performedPromotion;		
+
+		// en passant pawn capture fields
+		int _playNumberOfLastMove;
+
 		ChessPieceType _originalPieceType;
 		ChessPieceType _promotionPieceType;		
 };

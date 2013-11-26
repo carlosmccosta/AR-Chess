@@ -144,6 +144,7 @@ osgShadow::ShadowedScene* ChessBoard::setupBoard() {
 	_pieceToMove = NULL;
 	_moveOriginPosition = Vec2i(0, 0);
 	_moveDestinationPosition = Vec2i(0, 0);
+	_currentPlayNumber = 0;
 	
 	_whitePlayerGameTimer->finish();
 	_blackPlayerGameTimer->finish();
@@ -459,14 +460,19 @@ bool ChessBoard::processSecondSelection(Vec2i selectorBoardPosition, AuxiliarySe
 		// remove opponent piece if necessary
 		ChessPiece* pieceRemoved = NULL;
 		if (movePositionStatus == POSITION_WITH_OPPONENT_PIECE) {
-			pieceRemoved = removeChessPieceWithAnimation(_moveDestinationPosition, _currentPlayer);						
+			pieceRemoved = removeChessPieceWithAnimation(_moveDestinationPosition, _currentPlayer);
+		} else {
+			pieceRemoved = isEnPassantPawnCapturePossible(_pieceToMove, _moveDestinationPosition, _currentPlayer);
+			if (pieceRemoved != NULL) {
+				pieceRemoved->removePieceFromBoard();
+			}
 		}
 
 		_pieceMovesHistoryBackwardsStack.push_back(new ChessMoveHistory(_pieceToMove, _moveOriginPosition, _moveDestinationPosition,
-			_pieceToMove->hasPieceMovedPreviously(),
+			_pieceToMove->getPieceMovedPreviously(),
 			_whitePlayerGameTimerD, _whitePlayerGameTimerD + _whitePlayerGameTimer->elapsedTime(),
 			_blackPlayerGameTimerD, _blackPlayerGameTimerD + _blackPlayerGameTimer->elapsedTime(),
-			pieceRemoved));
+			_currentPlayNumber, pieceRemoved));
 
 		// animate piece movement to final destination
 		clearHighlights();
@@ -477,6 +483,7 @@ bool ChessBoard::processSecondSelection(Vec2i selectorBoardPosition, AuxiliarySe
 		
 		_animationDelayBetweenMoves->reset();
 		_animationInProgress = true;		
+		++_currentPlayNumber;
 
 		return true;
 	}
@@ -741,7 +748,7 @@ void ChessBoard::moveChessPieceWithAnimation(ChessPiece* chessPieceToMove, Vec2i
 	_moveDestinationPosition.y() = 0;
 		
 	if (!checkAndPerformCastling(chessPieceToMove, finalPosition)) {
-		chessPieceToMove->changePosition(finalPosition.x(), finalPosition.y());
+		chessPieceToMove->changePosition(finalPosition.x(), finalPosition.y(), _currentPlayNumber);
 	} else {
 		_pieceMovesHistoryBackwardsStack.back()->setPerformedCastling(true);
 	}	
@@ -767,10 +774,10 @@ bool ChessBoard::checkAndPerformCastling(ChessPiece* king, Vec2i finalPosition) 
 		ChessPiece* rook = getChessPieceAtBoardPosition((finalPosition.x() == 3 ? 4 : -4), king->getYPosition(), king->getChessPieceColor());
 
 		// move king
-		king->changePosition(finalPosition.x(), finalPosition.y());
+		king->changePosition(finalPosition.x(), finalPosition.y(), _currentPlayNumber);
 
 		// move rook
-		rook->changePosition((finalPosition.x() == 3 ? 2 : -1), finalPosition.y());
+		rook->changePosition((finalPosition.x() == 3 ? 2 : -1), finalPosition.y(), _currentPlayNumber);
 		return true;
 	}
 
@@ -780,7 +787,7 @@ bool ChessBoard::checkAndPerformCastling(ChessPiece* king, Vec2i finalPosition) 
 
 bool ChessBoard::isCastlingPossible(ChessPiece* king, Vec2i kingFinalPosition) {
 	// castling can only be done by the king and a rook if none of then has moved, and there is no pieces between then
-	if (king->getChessPieceType() == KING && !king->hasPieceMovedPreviously()) {				
+	if (king->getChessPieceType() == KING && !king->getPieceMovedPreviously()) {				
 		if (kingFinalPosition.x() == 3) {
 			// check if there are pieces blocking the castling
 			if (getChessPieceAtBoardPosition(2, king->getYPosition(), WHITE) != NULL || getChessPieceAtBoardPosition(2, king->getYPosition(), BLACK) != NULL ||
@@ -790,7 +797,7 @@ bool ChessBoard::isCastlingPossible(ChessPiece* king, Vec2i kingFinalPosition) {
 
 			// check if the rook hasn't move
 			ChessPiece* rookRightSide = getChessPieceAtBoardPosition(4, king->getYPosition(), king->getChessPieceColor());
-			if (rookRightSide == NULL || rookRightSide->hasPieceMovedPreviously()) {
+			if (rookRightSide == NULL || rookRightSide->getPieceMovedPreviously()) {
 				return false;
 			}
 				
@@ -807,7 +814,7 @@ bool ChessBoard::isCastlingPossible(ChessPiece* king, Vec2i kingFinalPosition) {
 
 			// check if the rook hasn't move
 			ChessPiece* rookRightSide = getChessPieceAtBoardPosition(-4, king->getYPosition(), king->getChessPieceColor());
-			if (rookRightSide == NULL || rookRightSide->hasPieceMovedPreviously()) {
+			if (rookRightSide == NULL || rookRightSide->getPieceMovedPreviously()) {
 				return false;
 			}
 
@@ -818,6 +825,21 @@ bool ChessBoard::isCastlingPossible(ChessPiece* king, Vec2i kingFinalPosition) {
 	}
 
 	return false;
+}
+
+
+ChessPiece* ChessBoard::isEnPassantPawnCapturePossible(ChessPiece* chessPieceToMove, Vec2i finalPosition, ChessPieceColor currentPlayerPieceColor) {
+	if (chessPieceToMove->getChessPieceType() == PAWN) {
+		ChessPiece* pieceToCheck = getChessPieceAtBoardPosition(finalPosition.x(), (currentPlayerPieceColor == WHITE ? finalPosition.y() - 1 : finalPosition.y() + 1), ChessPiece::getOpponentChessPieceColor(currentPlayerPieceColor));
+		if (pieceToCheck != NULL &&
+			pieceToCheck->getChessPieceType() == PAWN &&
+			pieceToCheck->getPawnMakeDoubleStep() &&
+			pieceToCheck->getPlayNumberOfLastMove() == (_currentPlayNumber - 1)) {
+			return pieceToCheck;
+		}
+	}
+
+	return NULL;
 }
 
 
@@ -941,6 +963,7 @@ bool ChessBoard::goToPreviousMoveInHistory() {
 			clearHighlights();
 		}
 
+		--_currentPlayNumber;
 		return true;
 	}
 
@@ -1001,6 +1024,7 @@ bool ChessBoard::goToNextMoveInHistory() {
 			clearHighlights();
 		}
 
+		++_currentPlayNumber;
 		return true;
 	}
 

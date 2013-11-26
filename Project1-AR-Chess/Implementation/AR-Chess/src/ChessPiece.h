@@ -48,7 +48,7 @@ class ChessPiece : public osg::Referenced {
 		string getPieceModelPath(ChessPieceType chessPieceType, ChessPieceColor chessPieceColor);
 		float getPieceModelSize(ChessPieceType chessPieceType);		
 
-		void changePosition(int xPosition, int yPosition);
+		void changePosition(int xPosition, int yPosition, int playNumber = -1);
 		void resetPosition();
 		void removePieceFromBoard();
 		void reinsertPieceOnBoard();		
@@ -64,8 +64,12 @@ class ChessPiece : public osg::Referenced {
 		int getYPosition() const { return _yPosition; }		
 		bool isPiecePlayable() const { return _piecePlayable; }		
 		MatrixTransform* getPieceMatrixTransform() const { return _pieceMatrixTransform; }
-		bool hasPieceMovedPreviously() const { return _pieceMovedPreviously; }
+		bool getPieceMovedPreviously() const { return _pieceMovedPreviously; }
 		void setPieceMovedPreviously(bool val) { _pieceMovedPreviously = val; }
+		int getPlayNumberOfLastMove() const { return _playNumberOfLastMove; }
+		void setPlayNumberOfLastMove(int val) { _playNumberOfLastMove = val; }		
+		bool getPawnMakeDoubleStep() const { return _pawnMakeDoubleStep; }
+		void setPawnMakeDoubleStep(bool val) { _pawnMakeDoubleStep = val; }
 		// ------------------------------------------------------------------------------  </gets | sets> ------------------------------------------------------------------------------
 
 	private:
@@ -81,6 +85,10 @@ class ChessPiece : public osg::Referenced {
 		bool _piecePlayable;
 		bool _pieceMovedPreviously;
 
+		// en passant pawn capture fields
+		int _playNumberOfLastMove;		
+		bool _pawnMakeDoubleStep;		
+		
 		Material* _pieceMaterial;
 		MatrixTransform* _pieceMatrixTransform;
 		MatrixTransform* _pieceMatrixTransformModel;
