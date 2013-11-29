@@ -7,7 +7,13 @@ ChessBoard::ChessBoard() {
 
 	_font3D = osgText::readFont3DFile(TEXT_FONT);
 	_lastSelectorBoardPosition = Vec2i(0, 0);
+		
+	_boardReseting = false;
 
+	_whitePlayerIsAI = false;
+	_blackPlayerIsAI = false;
+	_engineSkillLevel = 20;
+	
 
 	// board setup
 	Vec3 modelCenterShift = Vec3(0.0, 0.0, 0.0);
@@ -56,7 +62,9 @@ ChessBoard::ChessBoard() {
 	_boardShadowedScene->addChild(_promotionPieces);
 }
 
-ChessBoard::~ChessBoard() {}
+ChessBoard::~ChessBoard() {
+	_uciProtocol.terminateChessEngine();
+}
 
 
 void ChessBoard::setupImages() {
@@ -185,11 +193,14 @@ osgShadow::ShadowedScene* ChessBoard::resetBoard() {
 	}
 
 	clearSelections();
+	clearPossibleMoves();
 	clearPromotionPieces();
 
 	_animationDelayBetweenMoves->reset();
-	_whitePlayerGameTimerText->setText(ChessUtils::formatSecondsToDate(0));
-	_blackPlayerGameTimerText->setText(ChessUtils::formatSecondsToDate(0));
+	_whitePlayerGameTimerText->setText(getPlayerGameTimeFormated(0, WHITE));
+	_blackPlayerGameTimerText->setText(getPlayerGameTimeFormated(0, BLACK));
+
+	_boardReseting = true;
 
 	return setupBoard();
 }
@@ -250,8 +261,8 @@ void ChessBoard::setupPlayersTimers() {
 	_blackPlayerStatus = ChessUtils::createRectangleWithTexture(Vec3(0, 0, 0), osgDB::readImageFile(BLACK_PLAYER_STATUS_IMG), PLAYER_STATUS_WIDTH, PLAYER_STATUS_HEIGHT);
 
 	Vec3 textPosition = Vec3(PLAYER_STATUS_TEXT_LEFT_OFFSET, PLAYER_STATUS_TEXT_UP_OFFSET, PLAYER_STATUS_TEXT_Z_OFFSET);
-	_whitePlayerGameTimerText = ChessUtils::createText3D(ChessUtils::formatSecondsToDate(0), _font3D, textPosition, PLAYER_STATUS_TEXT_SIZE, PLAYER_STATUS_TEXT_DEPTH);
-	_blackPlayerGameTimerText = ChessUtils::createText3D(ChessUtils::formatSecondsToDate(0), _font3D, textPosition, PLAYER_STATUS_TEXT_SIZE, PLAYER_STATUS_TEXT_DEPTH);
+	_whitePlayerGameTimerText = ChessUtils::createText3D(getPlayerGameTimeFormated(0, WHITE), _font3D, textPosition, PLAYER_STATUS_TEXT_SIZE, PLAYER_STATUS_TEXT_DEPTH);
+	_blackPlayerGameTimerText = ChessUtils::createText3D(getPlayerGameTimeFormated(0, BLACK), _font3D, textPosition, PLAYER_STATUS_TEXT_SIZE, PLAYER_STATUS_TEXT_DEPTH);
 
 	setupPlayerTimer(_whitePlayerStatus, _whitePlayerGameTimerText, osg::PI_2, Vec3(-playersStatusXOffsetToBoardBorder, 0, PLAYER_STATUS_Z_OFFSET));
 	setupPlayerTimer(_blackPlayerStatus, _blackPlayerGameTimerText, -osg::PI_2, Vec3(playersStatusXOffsetToBoardBorder, 0, PLAYER_STATUS_Z_OFFSET));
@@ -309,6 +320,20 @@ bool ChessBoard::updateBoard(Vec2i selectorBoardPosition) {
 		return true;
 	}	
 	
+	if (_animationInProgress) {
+		if (_animationDelayBetweenMoves->elapsedTime() > PIECE_MOVE_MAX_ANIMATION_DURATION_SECONDS) {			
+			if (!_piecePromotionInProgress) {				
+				if (_boardReseting) {
+					_boardReseting = false;
+				} else {					
+					switchPlayer();
+				}
+				_animationInProgress = false;
+			}
+		}
+	}
+
+
 	bool selectorChangedPosition = false;
 	// reset selector timer when it changes position (even if it isn't inside the board squares)
 	if (selectorBoardPosition.x() != _lastSelectorBoardPosition.x() || selectorBoardPosition.y() != _lastSelectorBoardPosition.y()) {
@@ -322,27 +347,14 @@ bool ChessBoard::updateBoard(Vec2i selectorBoardPosition) {
 		selectorChangedPosition = true;
 	}
 
+	bool currentPlayerIsAI = isCurrentPlayerAI();
+
+	// update user input
 	AuxiliarySelector positionIsAnAuxiliarySelector = isPositionAnAuxiliarySelector(selectorBoardPosition);
 	if ((isPositionValid(selectorBoardPosition.x()) && isPositionValid(selectorBoardPosition.y())) || (positionIsAnAuxiliarySelector != SELECTOR_INVALID)) {
 		if (selectorChangedPosition) {
-			return hightLighPosition(selectorBoardPosition.x(), selectorBoardPosition.y(), positionIsAnAuxiliarySelector);
+			hightLighPosition(selectorBoardPosition.x(), selectorBoardPosition.y(), positionIsAnAuxiliarySelector);
 		} else {
-			if (_animationInProgress) {
-				if (_animationDelayBetweenMoves->elapsedTime() < PIECE_MOVE_MAX_ANIMATION_DURATION_SECONDS) {
-					return false;
-				}
-				else {
-					_animationInProgress = false;
-					clearSelections();
-
-					if (_currentPlayer == WHITE) {
-						updatePlayerStatus(_whitePlayerGameTimerText, _blackPlayerGameTimerText);
-					} else {
-						updatePlayerStatus(_blackPlayerGameTimerText, _whitePlayerGameTimerText);
-					}
-				}
-			}
-
 			if (_selectorTimer->elapsedTime_m() > PADDLE_TIME_TO_SELECT_POSITION) {
 				_selectorTimer->reset();
 				
@@ -351,12 +363,15 @@ bool ChessBoard::updateBoard(Vec2i selectorBoardPosition) {
 					return true;
 				}
 
-				// first selection (0 is an invalid position)
-				if (_moveOriginPosition.x() == 0) {	
-					return processFirstSelection(selectorBoardPosition, positionIsAnAuxiliarySelector);
-				} else {				
-					return processSecondSelection(selectorBoardPosition, positionIsAnAuxiliarySelector);
-				}				
+				if (!currentPlayerIsAI && !_animationInProgress) {
+					// first selection (0 is an invalid position)
+					if (_moveOriginPosition.x() == 0) {
+						return processFirstSelection(selectorBoardPosition);
+					}
+					else {
+						return processSecondSelection(selectorBoardPosition);
+					}
+				}
 			}
 		}
 	} else {
@@ -364,71 +379,121 @@ bool ChessBoard::updateBoard(Vec2i selectorBoardPosition) {
 		clearHighlights();
 	}
 	
+
+	// update AI
+	if (currentPlayerIsAI && !_animationInProgress && !_piecePromotionInProgress) {
+		return makeChessAIMove();
+	}
+
 	return false;
 }
 
 
 void ChessBoard::updatePlayersGameTimers(bool forceUpdate) {	
 	if (_currentPlayer == WHITE || forceUpdate) {		
-		_whitePlayerGameTimerText->setText(ChessUtils::formatSecondsToDate(_whitePlayerGameTimerD + _whitePlayerGameTimer->elapsedTime()));
+		_whitePlayerGameTimerText->setText(getPlayerGameTimeFormated(_whitePlayerGameTimerD + _whitePlayerGameTimer->elapsedTime(), WHITE));
 	}
 
 	if (_currentPlayer == BLACK || forceUpdate) {		
-		_blackPlayerGameTimerText->setText(ChessUtils::formatSecondsToDate(_blackPlayerGameTimerD + _blackPlayerGameTimer->elapsedTime()));
+		_blackPlayerGameTimerText->setText(getPlayerGameTimeFormated(_blackPlayerGameTimerD + _blackPlayerGameTimer->elapsedTime(), BLACK));
 	}
+}
+
+
+void ChessBoard::updatePlayersCumulativeGameTimers() {
+	if (_currentPlayer == WHITE) {
+		_whitePlayerGameTimerD += _whitePlayerGameTimer->elapsedTime();
+	}
+	else {
+		_blackPlayerGameTimerD += _blackPlayerGameTimer->elapsedTime();
+	}
+
+	_whitePlayerGameTimer->finish();
+	_blackPlayerGameTimer->finish();
+	_selectorTimer->finish();
+}
+
+
+string ChessBoard::getPlayerGameTimeFormated(double timeInSeconds, ChessPieceColor playerColor) {	
+	bool playerIsAI = false;
+	if ((playerColor == WHITE && _whitePlayerIsAI) || (playerColor == BLACK && _blackPlayerIsAI)) {
+		playerIsAI = true;
+	}	
+
+	string playerTag;
+	if (playerIsAI) {
+		playerTag = "C: ";
+	} else {
+		playerTag = "H: ";
+	}
+
+	string timeFormated = ChessUtils::formatSecondsToDate(timeInSeconds);
+
+	return playerTag + timeFormated;
 }
 
 
 void ChessBoard::processAuxiliarySelector(AuxiliarySelector auxiliarySelector) {
 	if (auxiliarySelector == SELECTOR_NEW_GAME_H_H_WHITE_SIDE || auxiliarySelector == SELECTOR_NEW_GAME_H_H_BLACK_SIDE) {
-		resetBoard();
+		_whitePlayerIsAI = false;
+		_blackPlayerIsAI = false;
+		resetBoard();		
 		_animationInProgress = true;
-	}
+	} else if (auxiliarySelector == SELECTOR_NEW_GAME_H_C_WHITE_SIDE || auxiliarySelector == SELECTOR_NEW_GAME_H_C_BLACK_SIDE) {		
+		restartChessEngine();		
 
-	if (auxiliarySelector == SELECTOR_PREVIOUS_MOVE_WHITE_SIDE || auxiliarySelector == SELECTOR_PREVIOUS_MOVE_BLACK_SIDE) {
+		_whitePlayerIsAI = false;
+		_blackPlayerIsAI = true;
+		resetBoard();		
+		_animationInProgress = true;
+	} else if (auxiliarySelector == SELECTOR_NEW_GAME_C_C_WHITE_SIDE || auxiliarySelector == SELECTOR_NEW_GAME_C_C_BLACK_SIDE) {		
+		restartChessEngine();		
+		
+		_whitePlayerIsAI = true;
+		_blackPlayerIsAI = true;
+		resetBoard();		
+		_animationInProgress = true;
+	} else if (auxiliarySelector == SELECTOR_PREVIOUS_MOVE_WHITE_SIDE || auxiliarySelector == SELECTOR_PREVIOUS_MOVE_BLACK_SIDE) {
 		if (goToPreviousMoveInHistory()) {
 			_animationDelayBetweenMoves->reset();
 			_animationInProgress = true;
 		}
-	}
-
-	if (auxiliarySelector == SELECTOR_NEXT_MOVE_WHITE_SIDE || auxiliarySelector == SELECTOR_NEXT_MOVE_BLACK_SIDE) {
+	} else if (auxiliarySelector == SELECTOR_NEXT_MOVE_WHITE_SIDE || auxiliarySelector == SELECTOR_NEXT_MOVE_BLACK_SIDE) {
 		if (goToNextMoveInHistory()) {
 			_animationDelayBetweenMoves->reset();
 			_animationInProgress = true;
 		}
-	}
-
-
-	if (_piecePromotionInProgress) {		
+	} else if (_piecePromotionInProgress) {		
 		if (auxiliarySelector == SELECTOR_PROMOTE_TO_QUEEN_WHITE_SIDE || auxiliarySelector == SELECTOR_PROMOTE_TO_QUEEN_BLACK_SIDE) {
 			_rankOfPromotion = QUEEN;
-			_piecePromotionConversionInProgress = true;
+			setupPiecePromotion();
 		} else if (auxiliarySelector == SELECTOR_PROMOTE_TO_ROOK_WHITE_SIDE || auxiliarySelector == SELECTOR_PROMOTE_TO_ROOK_BLACK_SIDE) {
 			_rankOfPromotion = ROOK;
-			_piecePromotionConversionInProgress = true;
+			setupPiecePromotion();
 		} else if (auxiliarySelector == SELECTOR_PROMOTE_TO_KNIGHT_WHITE_SIDE || auxiliarySelector == SELECTOR_PROMOTE_TO_KNIGHT_BLACK_SIDE) {
 			_rankOfPromotion = KNIGHT;
-			_piecePromotionConversionInProgress = true;
+			setupPiecePromotion();
 		} else if (auxiliarySelector == SELECTOR_PROMOTE_TO_BISHOP_WHITE_SIDE || auxiliarySelector == SELECTOR_PROMOTE_TO_BISHOP_BLACK_SIDE) {
 			_rankOfPromotion = BISHOP;
-			_piecePromotionConversionInProgress = true;
-		}
-
-		if (_piecePromotionConversionInProgress) {
-			_promotionConversionTimer->finish();
-			_pieceToPromote->shrinkPiece();
-
-			for (size_t i = 0; i < _promotionChessPieces.size(); ++i) {
-				_promotionChessPieces[i]->shrinkPiece();				
-			}
-		}
+			setupPiecePromotion();
+		}		
 	}
 }
 
 
-bool ChessBoard::processFirstSelection(Vec2i selectorBoardPosition, AuxiliarySelector auxiliarySelector) {
-	_pieceToMove = selectPosition(selectorBoardPosition.x(), selectorBoardPosition.y(), _currentPlayer, true, auxiliarySelector);
+void ChessBoard::setupPiecePromotion() {
+	_piecePromotionConversionInProgress = true;
+	_promotionConversionTimer->finish();
+	_pieceToPromote->shrinkPiece();
+
+	for (size_t i = 0; i < _promotionChessPieces.size(); ++i) {
+		_promotionChessPieces[i]->shrinkPiece();
+	}
+}
+
+
+bool ChessBoard::processFirstSelection(Vec2i selectorBoardPosition) {
+	_pieceToMove = selectPosition(selectorBoardPosition.x(), selectorBoardPosition.y(), _currentPlayer, true);
 
 	// mark origin position if a valid piece was selected
 	if (_pieceToMove != NULL) {
@@ -443,7 +508,7 @@ bool ChessBoard::processFirstSelection(Vec2i selectorBoardPosition, AuxiliarySel
 }
 
 
-bool ChessBoard::processSecondSelection(Vec2i selectorBoardPosition, AuxiliarySelector auxiliarySelector) {
+bool ChessBoard::processSecondSelection(Vec2i selectorBoardPosition, bool playerIsAI) {
 	MovePositionStatus movePositionStatus = isPositionAvailableToReceiveMove(_moveOriginPosition, selectorBoardPosition, _currentPlayer);
 
 	// invalid selection
@@ -457,7 +522,7 @@ bool ChessBoard::processSecondSelection(Vec2i selectorBoardPosition, AuxiliarySe
 		_moveOriginPosition.y() = 0;
 		clearSelections();
 		clearPossibleMoves();
-		hightLighPosition(selectorBoardPosition.x(), selectorBoardPosition.y(), auxiliarySelector);
+		hightLighPosition(selectorBoardPosition.x(), selectorBoardPosition.y());
 		return false;
 	}	
 
@@ -487,12 +552,16 @@ bool ChessBoard::processSecondSelection(Vec2i selectorBoardPosition, AuxiliarySe
 		clearHighlights();
 		clearSelections();
 		clearPossibleMoves();
-		hightLighPosition(selectorBoardPosition.x(), selectorBoardPosition.y(), auxiliarySelector);
+
+		if (!playerIsAI) {
+			hightLighPosition(selectorBoardPosition.x(), selectorBoardPosition.y());
+		}
+
 		//selectPosition(selectorBoardPosition.x(), selectorBoardPosition.y(), _currentPlayer);
 		moveChessPieceWithAnimation(_pieceToMove, _moveDestinationPosition);		
 		
 		_animationDelayBetweenMoves->reset();
-		_animationInProgress = true;		
+		_animationInProgress = true;
 		++_currentPlayNumber;
 
 		return true;
@@ -642,7 +711,7 @@ bool ChessBoard::hightLighPosition(int xBoardPosition, int yBoardPosition, Auxil
 bool ChessBoard::hightLighPossibleMove(int xBoardPosition, int yBoardPosition) {
 	if (isPositionValid(xBoardPosition) && isPositionValid(yBoardPosition)) {
 		Vec3f scenePosition = ChessUtils::computePieceScenePosition(xBoardPosition, yBoardPosition);
-		scenePosition.z() = BOARD_HIGHLIGHTS_HEIGHT_OFFSET;
+		scenePosition.z() = BOARD_POSSIBLE_MOVES_HEIGHT_OFFSET;
 		_boardSquarePossibleMoves->addChild(ChessUtils::createRectangleWithTexture(scenePosition, new Image(*_possibleMoveImg)));
 		return true;
 	} else {
@@ -797,6 +866,17 @@ Vec2iArray* ChessBoard::computePossibleMovePositions(ChessPiece* chessPiece) {
 				possibleMoves->push_back(pawnFrontPosition);
 			}
 
+			// double move
+			if (!chessPiece->getPieceMovedPreviously()) {
+				int pawnDoubleMoveFrontPositionX = xBoardPosition;
+				int pawnDoubleMoveFrontPositionY = (chessPieceColor == WHITE ? -1 : 1);
+
+				Vec2i pawnDoubleMoveFrontPosition = Vec2i(pawnDoubleMoveFrontPositionX, pawnDoubleMoveFrontPositionY);
+				if (getChessPieceAtBoardPosition(pawnDoubleMoveFrontPositionX, pawnDoubleMoveFrontPositionY, chessPieceColor) == NULL &&
+					getChessPieceAtBoardPosition(pawnDoubleMoveFrontPositionX, pawnDoubleMoveFrontPositionY, opponentChessPieceColor) == NULL) {
+					possibleMoves->push_back(pawnDoubleMoveFrontPosition);
+				}
+			}
 
 			// capture left
 			int pawnLeftPositionX = (xBoardPosition == 1 ? xBoardPosition - 2 : xBoardPosition - 1);
@@ -922,9 +1002,7 @@ void ChessBoard::moveChessPieceWithAnimation(ChessPiece* chessPieceToMove, Vec2i
 		_pieceMovesHistoryBackwardsStack.back()->setPerformedCastling(true);
 	}	
 
-	if (!checkAndPerformPromotion(chessPieceToMove, finalPosition)) {
-		switchPlayer();
-	}
+	checkAndPerformPromotion(chessPieceToMove, finalPosition);	
 
 	_pieceMovesHistoryFowardStack.clear();
 	updateHistoryManipulatorsVisibility();
@@ -1017,6 +1095,8 @@ bool ChessBoard::checkAndPerformPromotion(ChessPiece* chessPieceMoved, Vec2i fin
 		if ((chessPieceMoved->getChessPieceColor() == WHITE && chessPieceMoved->getYPosition() == 4) ||
 			(chessPieceMoved->getChessPieceColor() == BLACK && chessPieceMoved->getYPosition() == -4)) {
 			_pieceToPromote = chessPieceMoved;
+			_piecePromotionInProgress = true;
+
 			setupPromotionPiecesOnBoad(chessPieceMoved->getChessPieceColor());
 			return true;
 		}
@@ -1027,8 +1107,7 @@ bool ChessBoard::checkAndPerformPromotion(ChessPiece* chessPieceMoved, Vec2i fin
 
 
 void ChessBoard::setupPromotionPiecesOnBoad(ChessPieceColor chessPieceColor) {
-	_promotionChessPieces.clear();
-	_piecePromotionInProgress = true;
+	_promotionChessPieces.clear();	
 	
 	Vec3 scaleFactor = Vec3(0.0, 0.0, 0.0);
 	Vec3 translateOffset = Vec3(0.0, (chessPieceColor == WHITE ? PROMOTION_PIECES_BOARD_OFFSET : -PROMOTION_PIECES_BOARD_OFFSET), 0.0);
@@ -1078,7 +1157,7 @@ void ChessBoard::managePromotionConversionAndReversion() {
 			_piecePromotionReversionInProgress = false;
 		}		
 
-		switchPlayer();
+		//switchPlayer();
 	}
 }
 
@@ -1116,7 +1195,7 @@ bool ChessBoard::goToPreviousMoveInHistory() {
 			_piecePromotionReversionInProgress = true;
 		} else {
 			// move king to original position
-			moveBackInfo->moveBackInHistory();
+			moveBackInfo->moveBackInHistory();			
 			switchPlayer();
 		}				
 		
@@ -1174,11 +1253,11 @@ bool ChessBoard::goToNextMoveInHistory() {
 			Vec3 positionsOffset = finalPieceScenePosition - initialPieceScenePosition;
 			float positionsDistance = positionsOffset.length();
 			float pieceTravelSpeed = PIECE_MOVE_ANIMATION_TRAVEL_SPEED;
-			_timeToWaitForPromotingPieceFromHistory = std::max(positionsDistance / pieceTravelSpeed, 2.0f);
+			_timeToWaitForPromotingPieceFromHistory = (std::max)(positionsDistance / pieceTravelSpeed, 2.0f);
 
 			_piecePromotionConversionInProgress = false;
 			_piecePromotionConversionFromHistoryInProgress = true;
-		} else {			
+		} else {				
 			switchPlayer();
 		}
 
@@ -1237,17 +1316,10 @@ void ChessBoard::updateHistoryManipulatorsVisibility() {
 
 
 void ChessBoard::switchPlayer() {
-	if (_currentPlayer == WHITE) {
-		_whitePlayerGameTimerD += _whitePlayerGameTimer->elapsedTime();
-	} else {
-		_blackPlayerGameTimerD += _blackPlayerGameTimer->elapsedTime();
-	}
+	updatePlayersCumulativeGameTimers();
 	
+	clearSelections();
 	_currentPlayer = ChessPiece::getOpponentChessPieceColor(_currentPlayer);
-
-	_whitePlayerGameTimer->finish();
-	_blackPlayerGameTimer->finish();
-	_selectorTimer->finish();
 
 	if (_currentPlayer == WHITE) {
 		updatePlayerStatus(_whitePlayerGameTimerText, _blackPlayerGameTimerText);
@@ -1375,3 +1447,86 @@ ChessPiece* ChessBoard::getChessPieceAtBoardPosition(int xBoardPosition, int yBo
 	return NULL;
 }
 
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  <chess AI> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+bool ChessBoard::isCurrentPlayerAI() {
+	if ((_currentPlayer == WHITE && _whitePlayerIsAI) || (_currentPlayer == BLACK && _blackPlayerIsAI)) {
+		return true;
+	}
+
+	return false;
+}
+
+
+string ChessBoard::computeBoardUCIMoves() {
+	if (_pieceMovesHistoryBackwardsStack.empty()) {
+		return "";
+	}
+	
+	stringstream boardMoves;
+	boardMoves << _pieceMovesHistoryBackwardsStack[0]->getUciMove();
+
+	for (size_t i = 1; i < _pieceMovesHistoryBackwardsStack.size(); ++i) {
+		boardMoves << " " << _pieceMovesHistoryBackwardsStack[i]->getUciMove();
+	}
+
+	return boardMoves.str();
+}
+
+
+void ChessBoard::restartChessEngine(string enginePath) {
+	_uciProtocol.startUCIChessEngine(enginePath, _engineSkillLevel, CHESS_ENGINE_LOGFILE);
+}
+
+bool ChessBoard::makeChessAIMove() {
+	if (!_uciProtocol.isChessEngineReady()) {
+		return false;
+	}
+
+	// update engine board
+	if (_pieceMovesHistoryBackwardsStack.empty()) {
+		_uciProtocol.startNewChessGame(_engineSkillLevel);
+	}
+
+	string boardMoves = computeBoardUCIMoves();
+	_uciProtocol.setChessEngineBoardPosition(boardMoves);
+
+	string bestMove = _uciProtocol.receiveBestMoveFromChessEngine();
+
+	UCIMove uciMove;
+	Vec2iArray* boardMove = uciMove.convertUCIMoveToBoardMove(bestMove);
+
+	if (boardMove == NULL || boardMove->size() != 2) {
+		return false;
+	}
+
+	if (uciMove.isMoveWithPromotion()) {
+		_rankOfPromotion = uciMove.getPromotionRank();
+	}
+
+	_moveOriginPosition = boardMove->at(0);
+	Vec2i chessAIMoveFinalPosition = boardMove->at(1);
+	_moveDestinationPosition.x() = 0;
+	_moveDestinationPosition.y() = 0;
+
+	if (_moveOriginPosition.x() == 0 || _moveOriginPosition.y() == 0 || chessAIMoveFinalPosition.x() == 0 || chessAIMoveFinalPosition.y() == 0) {
+		return false;
+	}
+
+	_pieceToMove = getChessPieceAtBoardPosition(_moveOriginPosition.x(), _moveOriginPosition.y(), _currentPlayer);
+	
+	if (_pieceToMove == NULL) {
+		return false;
+	}	
+
+	bool moveResult = processSecondSelection(chessAIMoveFinalPosition, true);
+
+
+	if (uciMove.isMoveWithPromotion()) {
+		_pieceToPromote = _pieceToMove;
+		setupPiecePromotion();
+	}
+
+	return moveResult;
+}
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  </chess AI> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

@@ -18,6 +18,7 @@
 #define BOARD_SQUARE_SIZE 24
 #define BOARD_SQUARE_SHRINK_RATIO_FOR_OUTSIDE_PIECES 0.74
 #define BOARD_HIGHLIGHTS_HEIGHT_OFFSET 0.02
+#define BOARD_POSSIBLE_MOVES_HEIGHT_OFFSET 0.015
 #define BOARD_SELECTIONS_HEIGHT_OFFSET 0.01
 
 #define PIECE_HEIGHT_OFFSET -0.01
@@ -51,19 +52,19 @@
 
 #define WHITE_PLAYER_STATUS_IMG "images/white_player_status.png"
 #define BLACK_PLAYER_STATUS_IMG "images/black_player_status.png"
-#define PLAYER_STATUS_WIDTH 58
+#define PLAYER_STATUS_WIDTH 65
 #define PLAYER_STATUS_HEIGHT 12
 #define PLAYER_STATUS_Z_OFFSET -1
 #define PLAYER_STATUS_BOARD_BORDER_OFFSET 10
-#define PLAYER_STATUS_TEXT_LEFT_OFFSET -15
-#define PLAYER_STATUS_TEXT_UP_OFFSET 0.01
+#define PLAYER_STATUS_TEXT_LEFT_OFFSET -18
+#define PLAYER_STATUS_TEXT_UP_OFFSET 0.5
 #define PLAYER_STATUS_TEXT_Z_OFFSET 0
-#define PLAYER_STATUS_TEXT_SIZE 7
+#define PLAYER_STATUS_TEXT_SIZE 8
 #define PLAYER_STATUS_TEXT_DEPTH 1
 #define PLAYER_STATUS_TEXT_ACTIVE_COLOR Vec4(0.9, 0.8, 0.05, 0.8)
 #define PLAYER_STATUS_TEXT_INACTIVE_COLOR Vec4(0.4, 0.4, 0.4, 0.8)
 
-#define TEXT_FONT "fonts/Harrington.ttf"
+#define TEXT_FONT "fonts/timerFont.ttf"
 
 #define AUXILIARY_SELECTORS_X_OFFSET 6
 #define AUXILIARY_SELECTORS_Y_OFFSET 0
@@ -89,4 +90,10 @@
 
 #define RECEIVE_SHADOW_MASK 0x1
 #define CAST_SHADOW_MASK 0x2
+
+
+#define CHESS_ENGINE_FILE_PATH "chessengines/chessEngine.exe"
+#define CHESS_ENGINE_WORKING_DIRECTORY "chessengines/"
+#define CHESS_ENGINE_ARGS ""
+#define CHESS_ENGINE_LOGFILE "chessengines/chessEngineCommunications.log"
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  </constants definitions> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

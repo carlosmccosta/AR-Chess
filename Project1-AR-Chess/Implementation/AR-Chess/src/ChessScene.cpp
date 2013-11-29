@@ -65,6 +65,7 @@ void ChessScene::setupViewer() {
 	_viewer.addEventHandler(new osgViewer::WindowSizeHandler);	//resize, full screen 'f'
 	_viewer.addEventHandler(new osgViewer::ThreadingHandler);	//threading mode, press 't'
 	_viewer.addEventHandler(new osgViewer::HelpHandler);		//help menu, press 'h'	
+	_viewer.setUpViewInWindow(10, 32, 1900, 1040);
 }
 
 

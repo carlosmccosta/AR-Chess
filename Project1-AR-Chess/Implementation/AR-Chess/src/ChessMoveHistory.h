@@ -4,13 +4,18 @@
 #include <osg/Vec2i>
 #include <osg/Referenced>
 
+// std includes
+#include <string>
+
 // project includes
 #include "ChessPiece.h"
+#include "UCIMove.h"
 
 // namespace specific imports to avoid namespace pollution
+using std::string;
 using osg::Vec2i;
+using osg::Vec2iArray;
 using osg::Referenced;
-
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  </includes> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 class ChessMoveHistory : public Referenced {
@@ -21,12 +26,13 @@ class ChessMoveHistory : public Referenced {
 		virtual ~ChessMoveHistory();
 
 		void moveBackInHistory();
-		void moveFowardInHistory();
+		void moveFowardInHistory();		
 
 		// ------------------------------------------------------------------------------  <gets | sets> -------------------------------------------------------------------------------
 		ChessPiece* getPieceMoved() const { return _pieceMoved; }		
 		Vec2i getPieceMovedOriginPosition() const { return _pieceMovedOriginPosition; }		
 		Vec2i getPieceMovedDestinationPosition() const { return _pieceMovedDestinationPosition; }
+		string getUciMove() const { return _uciMove; }
 		double getWhitePlayerGameTimerD() const { return _whitePlayerGameTimerD; }
 		double getWhitePlayerGameTimerDEndMove() const { return _whitePlayerGameTimerDEndMove; }
 		double getBlackPlayerGameTimerD() const { return _blackPlayerGameTimerD; }
@@ -39,7 +45,7 @@ class ChessMoveHistory : public Referenced {
 		ChessPieceType getOriginalPieceType() const { return _originalPieceType; }
 		void setOriginalPieceType(ChessPieceType val) { _originalPieceType = val; }
 		ChessPieceType getPromotionPieceType() const { return _promotionPieceType; }
-		void setPromotionPieceType(ChessPieceType val) { _promotionPieceType = val; }
+		void setPromotionPieceType(ChessPieceType promotionRank);
 		// ------------------------------------------------------------------------------  </gets | sets> ------------------------------------------------------------------------------
 
 
@@ -47,6 +53,7 @@ class ChessMoveHistory : public Referenced {
 		ChessPiece* _pieceMoved;		
 		Vec2i _pieceMovedOriginPosition;
 		Vec2i _pieceMovedDestinationPosition;
+		string _uciMove;				
 		bool _pieceHasMovedPriviously;
 		double _whitePlayerGameTimerD;
 		double _whitePlayerGameTimerDEndMove;				

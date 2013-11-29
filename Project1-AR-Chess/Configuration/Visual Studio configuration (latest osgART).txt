@@ -145,6 +145,18 @@ OSG_FILE_PATH
 C:\Program Files (x86)\osgART\share\osgART
 
 
+################################################################################################################
+### Boost
+################################################################################################################
+Install the c++ Boost libraries to C:\Program Files (x86)\boost_1_55_0
+http://sourceforge.net/projects/boost/files/boost-binaries/1.55.0-build2/
+http://sourceforge.net/projects/boost/files/boost-binaries/1.55.0-build2/boost_1_55_0-msvc-11.0-32.exe/download
+
+Install the Boost process in the respective boost directories
+http://www.highscore.de/boost/process0.5/
+http://www.highscore.de/boost/process0.5/process.zip
+
+
 
 ################################################################################################################
 ### Visual Studio 2012 or
@@ -152,14 +164,18 @@ C:\Program Files (x86)\osgART\share\osgART
 ################################################################################################################
 -> Project properties -> Configuration Properties -> C/C+ -> General -> Additional Include Directories
 C:\Program Files (x86)\osgART\include
+C:\Program Files (x86)\boost_1_55_0
 
 -> Project properties -> Configuration Properties -> C/C+ -> Preprocessor -> Preprocessor Definitions
 WIN32
 _WINDOWS
+_CRT_SECURE_NO_WARNINGS
+_SCL_SECURE_NO_WARNINGS
 _DEBUG
 
 
 -> Project properties -> Configuration Properties -> Linker -> General -> Additional Library Directories
+C:\Program Files (x86)\boost_1_55_0\lib32-msvc-11.0
 C:\Program Files (x86)\osgART\lib
 
 -> Project properties -> Configuration Properties -> Linker -> Input -> Additional Dependencies

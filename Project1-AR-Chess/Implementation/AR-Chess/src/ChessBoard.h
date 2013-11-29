@@ -11,6 +11,10 @@
 
 // std includes
 #include <vector>
+#include <ios>
+#include <fstream>
+#include <string>
+#include <sstream>
 
 // project includes
 #include "ChessUtils.h"
@@ -18,9 +22,13 @@
 #include "Configs.h"
 #include "ChessMoveHistory.h"
 
+#include "UCIMove.h"
+#include "UCIProtocol.h"
 
 // namespace specific imports to avoid namespace pollution
 using std::vector;
+using std::string;
+using std::stringstream;
 using osg::MatrixTransform;
 using osg::Vec2i;
 using osg::Vec2iArray;
@@ -85,9 +93,12 @@ class ChessBoard : public osg::Referenced {
 
 		bool updateBoard(Vec2i selectorBoardPosition);						
 		void updatePlayersGameTimers(bool forceUpdate = false);
+		void updatePlayersCumulativeGameTimers();
+		string getPlayerGameTimeFormated(double timeInSeconds, ChessPieceColor playerColor);
 		void processAuxiliarySelector(AuxiliarySelector auxiliarySelector);
-		bool processFirstSelection(Vec2i selectorBoardPosition, AuxiliarySelector auxiliarySelector = SELECTOR_INVALID);
-		bool processSecondSelection(Vec2i selectorBoardPosition, AuxiliarySelector auxiliarySelector = SELECTOR_INVALID);
+		void setupPiecePromotion();
+		bool processFirstSelection(Vec2i selectorBoardPosition);
+		bool processSecondSelection(Vec2i selectorBoardPosition, bool playerIsAI = false);
 
 		void updatePlayerStatus(Text3D* makeActive, Text3D* makeInactive);
 		void clearPlayersPieces();
@@ -123,7 +134,14 @@ class ChessBoard : public osg::Referenced {
 
 		bool isPositionValid(int position);
 		AuxiliarySelector isPositionAnAuxiliarySelector(Vec2i position);
-		ChessPiece* getChessPieceAtBoardPosition(int xBoardPosition, int yBoardPosition, ChessPieceColor chessPieceColor);		
+		ChessPiece* getChessPieceAtBoardPosition(int xBoardPosition, int yBoardPosition, ChessPieceColor chessPieceColor);	
+
+		// chess AI
+		bool isCurrentPlayerAI();
+		string computeBoardUCIMoves();
+		void restartChessEngine(string enginePath = CHESS_ENGINE_FILE_PATH);
+		bool makeChessAIMove();
+
 
 	private:
 		vector<ChessPiece*> _whiteChessPieces;
@@ -161,6 +179,7 @@ class ChessBoard : public osg::Referenced {
 
 		ElapsedTime* _selectorTimer;
 		ElapsedTime* _animationDelayBetweenMoves;
+		bool _boardReseting;
 		bool _animationInProgress;
 		bool _piecePromotionInProgress;
 		bool _piecePromotionConversionInProgress;
@@ -193,5 +212,12 @@ class ChessBoard : public osg::Referenced {
 		Image* _previousMoveSelectedImg;
 		Image* _nextMoveImg;
 		Image* _nextMoveSelectedImg;
+
+		// chess AI
+		//chessinterfaceengine* _chessEngine;
+		UCIProtocol _uciProtocol;		
+		bool _whitePlayerIsAI;
+		bool _blackPlayerIsAI;
+		int _engineSkillLevel;
 };
 
