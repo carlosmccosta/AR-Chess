@@ -138,6 +138,7 @@ class ChessBoard : public osg::Referenced {
 
 		// chess AI
 		bool isCurrentPlayerAI();
+		bool isOpponentPlayerAI();
 		string computeBoardUCIMoves();
 		void restartChessEngine(string enginePath = CHESS_ENGINE_FILE_PATH);
 		bool makeChessAIMove();
@@ -182,6 +183,7 @@ class ChessBoard : public osg::Referenced {
 		bool _boardReseting;
 		bool _animationInProgress;
 		bool _piecePromotionInProgress;
+		bool _piecePromotionInProgressAborted;
 		bool _piecePromotionConversionInProgress;
 		bool _piecePromotionConversionFromHistoryInProgress;
 		double _timeToWaitForPromotingPieceFromHistory;

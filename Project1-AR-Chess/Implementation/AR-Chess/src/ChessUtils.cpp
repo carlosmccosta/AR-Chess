@@ -311,7 +311,7 @@ AnimationPath* ChessUtils::createScaleAnimationPath(Vec3f position, osgAnimation
 	float deltaTime = animationTimeSeconds / (float)numberSamplesInPath;	
 	
 	double currenTime = 0;
-	for (size_t currentSamplePosition = 0; currentSamplePosition < numberSamplesInPath; ++currentSamplePosition) {		
+	while (currenTime <= animationTimeSeconds) {		
 		float scaleFactor = scaleEaseMotion->getValue();
 		scaleEaseMotion->update(deltaTime);
 		

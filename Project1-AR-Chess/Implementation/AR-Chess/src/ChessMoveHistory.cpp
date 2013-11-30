@@ -9,7 +9,10 @@ ChessMoveHistory::ChessMoveHistory(ChessPiece* pieceMoved, Vec2i pieceMovedOrigi
 	_blackPlayerGameTimerD(blackPlayerGameTimerD), _blackPlayerGameTimerDEndMove(blackPlayerGameTimerDEndMove),
 	_pieceRemoved(pieceRemoved), _performedCastling(false), _performedPromotion(false), _playNumberOfLastMove(playNumberOfLastMove) {
 	
-	_uciMove = UCIMove::convertBoardMoveToUCIMove(pieceMovedOriginPosition, pieceMovedDestinationPosition);
+	_originalPieceType = pieceMoved->getChessPieceType();
+	_promotionPieceType = pieceMoved->getChessPieceType();
+
+	_uciMove = UCIMove::convertBoardMoveToUCIMove(pieceMovedOriginPosition, pieceMovedDestinationPosition);	
 }
 
 ChessMoveHistory::~ChessMoveHistory() {}
