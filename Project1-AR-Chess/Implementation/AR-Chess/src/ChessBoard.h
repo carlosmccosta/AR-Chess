@@ -39,6 +39,15 @@ using osg::Image;
 using osg::ElapsedTime;
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  </includes> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+enum GameStatus {
+	IN_PROGRESS,
+	WHITE_IN_CHECK,
+	BLACK_IN_CHECK,
+	DRAW,
+	WHITE_WON,
+	BLACK_WON
+};
+
 
 enum MovePositionStatus {
 	POSITION_AVAILABLE,
@@ -112,7 +121,8 @@ class ChessBoard : public osg::Referenced {
 		ChessPiece* selectPosition(int xBoardPosition, int yBoardPosition, ChessPieceColor chessPieceColor, bool selectOnlyIfExistsPiece = false, AuxiliarySelector auxiliarySelector = SELECTOR_INVALID);
 		bool showPossibleMoves(ChessPiece* chessPiece);
 		Vec2iArray* computePossibleMovePositions(ChessPiece* chessPiece);
-		bool updateKingOrKnightPossibleMoves(Vec2i initialPosition, Vec2i finalPosition, ChessPieceColor chessPieceColor, Vec2iArray* possibleMoves);
+		bool updateKingPossibleMoves(Vec2i initialPosition, Vec2i finalPosition, ChessPieceColor chessPieceColor, Vec2iArray* possibleMoves);
+		bool updateKnightPossibleMoves(Vec2i initialPosition, Vec2i finalPosition, ChessPieceColor chessPieceColor, Vec2iArray* possibleMoves);
 		ChessPiece* updatePossibleMovesAlongLine(Vec2i initialPosition, int xIncrement, int yIncrement, ChessPieceColor chessPieceColor, Vec2iArray* possibleMoves);
 		MovePositionStatus isPositionAvailableToReceiveMove(Vec2i initialPosition, Vec2i finalPosition, ChessPieceColor currentPlayer);
 
@@ -126,15 +136,24 @@ class ChessBoard : public osg::Referenced {
 		void managePromotionConversionAndReversion();
 		void removePromotionPiecesOnBoad();
 
+		bool isKingInCheck(Vec2i kingPosition, ChessPieceColor kingColor);
+		bool isKingInCheckMate(Vec2i kingPosition, ChessPieceColor kingColor);
+
 		bool goToPreviousMoveInHistory();
 		bool goToNextMoveInHistory();
 		void updateHistoryManipulatorsVisibility();
 
 		void switchPlayer();
+		void showGameStatus(GameStatus gameStatus);
+		bool isGameInProgress();
 
 		bool isPositionValid(int position);
 		AuxiliarySelector isPositionAnAuxiliarySelector(Vec2i position);
 		ChessPiece* getChessPieceAtBoardPosition(int xBoardPosition, int yBoardPosition, ChessPieceColor chessPieceColor);	
+
+		void setupGameStatusText(Text3D* gameStatusText, float rotationAngle);
+		void setGameStatusText(string text);
+		void clearGameStatusText();
 
 		// chess AI
 		bool isCurrentPlayerAI();
@@ -145,6 +164,9 @@ class ChessBoard : public osg::Referenced {
 
 
 	private:
+		GameStatus _gameStatus;
+		Text3D* _gameStatusTextWhiteSide;
+		Text3D* _gameStatusTextBlackSide;
 		vector<ChessPiece*> _whiteChessPieces;
 		vector<ChessPiece*> _blackChessPieces;
 		vector<ChessPiece*> _promotionChessPieces;
@@ -152,6 +174,8 @@ class ChessBoard : public osg::Referenced {
 		vector<ChessMoveHistory*> _pieceMovesHistoryFowardStack;
 		ChessPieceColor _currentPlayer;
 		ChessPiece* _pieceToMove;
+		ChessPiece* _pieceKingWhite;
+		ChessPiece* _pieceKingBlack;
 
 		ChessPiece* _pieceToPromote;
 		ChessPieceType _rankOfPromotion;

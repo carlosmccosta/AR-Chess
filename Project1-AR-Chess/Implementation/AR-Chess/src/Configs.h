@@ -24,7 +24,7 @@
 #define PIECE_HEIGHT_OFFSET -0.01
 #define PIECE_OUTSIDE_OFFSET 12
 #define PIECE_MOVE_ANIMATION_TRAVEL_SPEED 48
-#define PIECE_MOVE_MAX_ANIMATION_DURATION_SECONDS (BOARD_SQUARE_SIZE * 6 / PIECE_MOVE_ANIMATION_TRAVEL_SPEED)
+#define PIECE_MOVE_MAX_ANIMATION_DURATION_SECONDS (BOARD_SQUARE_SIZE * 2 / PIECE_MOVE_ANIMATION_TRAVEL_SPEED)
 #define PIECE_MOVE_ANIMATION_HEIGHT_JUMP 90
 #define PIECE_KING_SIZE 27
 #define PIECE_QUEEN_SIZE 25
@@ -49,6 +49,18 @@
 #define PADDLE_SELECTED_IMG "images/blue_and_orange_circle.png"
 #define POSSIBLE_MOVE_IMG "images/green_circle.png"
 #define PADDLE_TIME_TO_SELECT_POSITION 2000 
+
+#define GAME_STATUS_TEXT_SIZE 12
+#define GAME_STATUS_TEXT_DEPTH 4
+#define GAME_STATUS_NEW_GAME_H_H "Started new game (Human vs Human)"
+#define GAME_STATUS_NEW_GAME_H_C "Started new game (Human vs Computer)"
+#define GAME_STATUS_NEW_GAME_C_C "Started new game (Computer vs Computer)"
+
+#define GAME_STATUS_TEXT_WHITE_IN_CHECK "White king in check!"
+#define GAME_STATUS_TEXT_BLACK_IN_CHECK "Black king in check!"
+#define GAME_STATUS_TEXT_DRAW "Draw!"
+#define GAME_STATUS_TEXT_WHITE_WON "White player won!"
+#define GAME_STATUS_TEXT_BLACK_WON "Black player won!"
 
 #define WHITE_PLAYER_STATUS_IMG "images/white_player_status.png"
 #define BLACK_PLAYER_STATUS_IMG "images/black_player_status.png"

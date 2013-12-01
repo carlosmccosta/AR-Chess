@@ -13,6 +13,7 @@
 #define UCI_BOARD_POSITION "position startpos moves "
 #define UCI_GO "go"
 #define UCI_BESTMOVE "bestmove"
+#define UCI_BESTMOVE_CHECK_MATE "(none)"
 #define UCI_QUIT "quit"
 
 #define UCI_BOOK_FILE_PATH "chessengines/book.bin"
@@ -64,6 +65,7 @@ class UCIProtocol : public Referenced {
 
 		void setChessEngineBoardPosition(string pieceMoves);
 		string receiveBestMoveFromChessEngine();
+		bool isBoardPositionInCheckMate(string pieceMoves);
 
 		void sendMessageToEngine(string msg);
 		string receiveMessageFromEngine();

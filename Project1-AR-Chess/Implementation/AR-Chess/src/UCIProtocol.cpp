@@ -126,6 +126,18 @@ string UCIProtocol::receiveBestMoveFromChessEngine() {
 }
 
 
+bool UCIProtocol::isBoardPositionInCheckMate(string pieceMoves) {
+	setChessEngineBoardPosition(pieceMoves);
+	string engineBestMove = receiveBestMoveFromChessEngine();
+
+	if (engineBestMove.find(UCI_BESTMOVE_CHECK_MATE) == string::npos) {
+		return false;
+	}
+
+	return true;
+}
+
+
 void UCIProtocol::sendMessageToEngine(string msg) {
 	if (_guiToEngineStream->is_open()) {
 		(*_guiToEngineStream) << msg;

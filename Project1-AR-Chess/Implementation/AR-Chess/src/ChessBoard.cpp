@@ -1,7 +1,7 @@
 #include "ChessBoard.h"
 
 
-ChessBoard::ChessBoard() {
+ChessBoard::ChessBoard() {	
 	setupImages();
 	setupMaterials();
 
@@ -13,7 +13,8 @@ ChessBoard::ChessBoard() {
 	_whitePlayerIsAI = false;
 	_blackPlayerIsAI = false;
 	_engineSkillLevel = 20;
-	
+	_uciProtocol.startUCIChessEngine(CHESS_ENGINE_FILE_PATH, _engineSkillLevel, CHESS_ENGINE_LOGFILE);
+
 
 	// board setup
 	Vec3 modelCenterShift = Vec3(0.0, 0.0, 0.0);
@@ -60,6 +61,14 @@ ChessBoard::ChessBoard() {
 	_boardShadowedScene->addChild(_boardSquareSelections);
 	_boardShadowedScene->addChild(_boardSquarePossibleMoves);
 	_boardShadowedScene->addChild(_promotionPieces);
+
+	_gameStatusTextWhiteSide = ChessUtils::createText3D("Game Status", _font3D, Vec3(0, -4.65 * BOARD_SQUARE_SIZE, PLAYER_STATUS_Z_OFFSET), GAME_STATUS_TEXT_SIZE, GAME_STATUS_TEXT_DEPTH);
+	_gameStatusTextWhiteSide->setAlignment(osgText::TextBase::CENTER_CENTER);
+	_gameStatusTextBlackSide = ChessUtils::createText3D("Game Status", _font3D, Vec3(0, -4.65 * BOARD_SQUARE_SIZE, PLAYER_STATUS_Z_OFFSET), GAME_STATUS_TEXT_SIZE, GAME_STATUS_TEXT_DEPTH);
+	_gameStatusTextBlackSide->setAlignment(osgText::TextBase::CENTER_CENTER);
+
+	setupGameStatusText(_gameStatusTextWhiteSide, 0.0);
+	setupGameStatusText(_gameStatusTextBlackSide, osg::PI);		
 }
 
 ChessBoard::~ChessBoard() {
@@ -151,6 +160,7 @@ void ChessBoard::setupGameHistoryManipulators() {
 
 
 osgShadow::ShadowedScene* ChessBoard::setupBoard() {
+	_gameStatus = IN_PROGRESS;
 	_currentPlayer = WHITE;
 	_pieceToMove = NULL;
 	_moveOriginPosition = Vec2i(0, 0);
@@ -180,6 +190,14 @@ osgShadow::ShadowedScene* ChessBoard::setupBoard() {
 	updateHistoryManipulatorsVisibility();	
 
 	updatePlayerStatus(_whitePlayerGameTimerText, _blackPlayerGameTimerText);	
+
+	if (!_whitePlayerIsAI && !_blackPlayerIsAI) {
+		setGameStatusText(GAME_STATUS_NEW_GAME_H_H);
+	} else if (!_whitePlayerIsAI && _blackPlayerIsAI) {
+		setGameStatusText(GAME_STATUS_NEW_GAME_H_C);
+	} else if (_whitePlayerIsAI && _blackPlayerIsAI) {
+		setGameStatusText(GAME_STATUS_NEW_GAME_C_C);
+	}
 
 	return _boardShadowedScene;
 }
@@ -213,8 +231,10 @@ void ChessBoard::setupBoardPieces() {
 	//setup initial positions
 
 	// kings
-	_whiteChessPieces.push_back(new ChessPiece(KING, WHITE, 1, -4, _whitePiecesMaterial));
-	_blackChessPieces.push_back(new ChessPiece(KING, BLACK, 1, 4, _blackPiecesMaterial));
+	_pieceKingWhite = new ChessPiece(KING, WHITE, 1, -4, _whitePiecesMaterial);
+	_pieceKingBlack = new ChessPiece(KING, BLACK, 1, 4, _blackPiecesMaterial);
+	_whiteChessPieces.push_back(_pieceKingWhite);
+	_blackChessPieces.push_back(_pieceKingBlack);
 
 	//queens
 	_whiteChessPieces.push_back(new ChessPiece(QUEEN, WHITE, -1, -4, _whitePiecesMaterial));
@@ -277,7 +297,7 @@ void ChessBoard::setupPlayerTimer(Geode* backgroundImage, Text3D* timerText, flo
 	playerTimerMT->addChild(backgroundImage);
 	
 	Geode* timerTextGeode = new Geode();
-	timerTextGeode->addDrawable(timerText);		
+	timerTextGeode->addDrawable(timerText);
 
 	playerTimerMT->addChild(timerTextGeode);
 	playerTimerMT->postMult(Matrix::rotate(rotationAngle, osg::Z_AXIS));
@@ -304,52 +324,60 @@ MatrixTransform* ChessBoard::setupAuxiliarySelector(Vec2i position, Image* image
 
 
 bool ChessBoard::updateBoard(Vec2i selectorBoardPosition) {
-	updatePlayersGameTimers();
+	bool gameInProgress = isGameInProgress();
 
-	if (_piecePromotionConversionFromHistoryInProgress && !_piecePromotionConversionInProgress) {
-		if (_animationDelayBetweenMoves->elapsedTime() > _timeToWaitForPromotingPieceFromHistory) {
-			_pieceToPromote->shrinkPiece();
-			_promotionConversionTimer->finish();
-			_animationDelayBetweenMoves->finish();
-			_piecePromotionConversionInProgress = true;						
-		} else {
+	if (gameInProgress) {
+		updatePlayersGameTimers();
+
+		if (_piecePromotionConversionFromHistoryInProgress && !_piecePromotionConversionInProgress) {
+			if (_animationDelayBetweenMoves->elapsedTime() > _timeToWaitForPromotingPieceFromHistory) {
+				_pieceToPromote->shrinkPiece();
+				_promotionConversionTimer->finish();
+				_animationDelayBetweenMoves->finish();
+				_piecePromotionConversionInProgress = true;
+			}
+			else {
+				return true;
+			}
+		}
+
+
+		if (_piecePromotionConversionInProgress || _piecePromotionReversionInProgress) {
+			managePromotionConversionAndReversion();
 			return true;
 		}
 	}
 
-
-	if (_piecePromotionConversionInProgress || _piecePromotionReversionInProgress) {
-		managePromotionConversionAndReversion();
-		return true;
-	}	
-	
 	if (_animationInProgress) {
-		if (_animationDelayBetweenMoves->elapsedTime() > PIECE_MOVE_MAX_ANIMATION_DURATION_SECONDS) {			
-			if (!_piecePromotionInProgress) {								
+		if (_animationDelayBetweenMoves->elapsedTime() > PIECE_MOVE_MAX_ANIMATION_DURATION_SECONDS) {
+			if (!_piecePromotionInProgress) {
 				if (_boardReseting) {
 					_animationInProgress = false;
 					_boardReseting = false;
 					clearPromotionPieces();
-				} else {
+				}
+				else {
 					if (!_piecePromotionInProgressAborted) {
 						switchPlayer();
-					} else {
+					}
+					else {
 						_piecePromotionInProgressAborted = false;
 						clearPromotionPieces();
 					}
-					
+
 
 					// go back in history moves again if a human player is against a AI player and it wants to undo last move
 					if (isCurrentPlayerAI() && !isOpponentPlayerAI() && !_pieceMovesHistoryFowardStack.empty()) {
 						goToPreviousMoveInHistory();
-					} else {
+					}
+					else {
 						_animationInProgress = false;
 					}
-				}				
+				}
 			}
 		}
 	}
-
+	
 
 	bool selectorChangedPosition = false;
 	// reset selector timer when it changes position (even if it isn't inside the board squares)
@@ -380,7 +408,7 @@ bool ChessBoard::updateBoard(Vec2i selectorBoardPosition) {
 					return true;
 				}
 
-				if (!currentPlayerIsAI && !_animationInProgress) {
+				if (gameInProgress && !currentPlayerIsAI && !_animationInProgress) {
 					// first selection (0 is an invalid position)
 					if (_moveOriginPosition.x() == 0) {
 						return processFirstSelection(selectorBoardPosition);
@@ -397,7 +425,7 @@ bool ChessBoard::updateBoard(Vec2i selectorBoardPosition) {
 	
 
 	// update AI
-	if (currentPlayerIsAI && !_animationInProgress && !_piecePromotionInProgress) {
+	if (gameInProgress && currentPlayerIsAI && !_animationInProgress && !_piecePromotionInProgress) {
 		return makeChessAIMove();
 	}
 
@@ -425,8 +453,7 @@ void ChessBoard::updatePlayersCumulativeGameTimers() {
 	}
 
 	_whitePlayerGameTimer->finish();
-	_blackPlayerGameTimer->finish();
-	_selectorTimer->finish();
+	_blackPlayerGameTimer->finish();	
 }
 
 
@@ -569,18 +596,18 @@ bool ChessBoard::processSecondSelection(Vec2i selectorBoardPosition, bool player
 			_whitePlayerGameTimerD, _whitePlayerGameTimerD + _whitePlayerGameTimer->elapsedTime(),
 			_blackPlayerGameTimerD, _blackPlayerGameTimerD + _blackPlayerGameTimer->elapsedTime(),
 			_currentPlayNumber, pieceRemoved));
-
+				
+		
 		// animate piece movement to final destination
-		clearHighlights();
-		clearSelections();
-		clearPossibleMoves();
-
-		if (!playerIsAI) {
-			hightLighPosition(selectorBoardPosition.x(), selectorBoardPosition.y());
-		}
-
+		moveChessPieceWithAnimation(_pieceToMove, _moveDestinationPosition);
 		//selectPosition(selectorBoardPosition.x(), selectorBoardPosition.y(), _currentPlayer);
-		moveChessPieceWithAnimation(_pieceToMove, _moveDestinationPosition);		
+				
+		if (!playerIsAI) {
+			clearHighlights();
+			clearSelections();
+			clearPossibleMoves();
+			hightLighPosition(selectorBoardPosition.x(), selectorBoardPosition.y());			
+		}
 		
 		_animationDelayBetweenMoves->reset();
 		_animationInProgress = true;
@@ -798,14 +825,14 @@ Vec2iArray* ChessBoard::computePossibleMovePositions(ChessPiece* chessPiece) {
 	switch (chessPieceType) {		
 		case KING: {
 			// normal moves
-			updateKingOrKnightPossibleMoves(pieceInitialPosition, Vec2i((xBoardPosition ==  1 ? xBoardPosition - 2 : xBoardPosition - 1),  yBoardPosition), chessPieceColor, possibleMoves);
-			updateKingOrKnightPossibleMoves(pieceInitialPosition, Vec2i((xBoardPosition ==  1 ? xBoardPosition - 2 : xBoardPosition - 1), (yBoardPosition == -1 ? yBoardPosition + 2 : yBoardPosition + 1)), chessPieceColor, possibleMoves);
-			updateKingOrKnightPossibleMoves(pieceInitialPosition, Vec2i( xBoardPosition,                                                  (yBoardPosition == -1 ? yBoardPosition + 2 : yBoardPosition + 1)), chessPieceColor, possibleMoves);
-			updateKingOrKnightPossibleMoves(pieceInitialPosition, Vec2i((xBoardPosition == -1 ? xBoardPosition + 2 : xBoardPosition + 1), (yBoardPosition == -1 ? yBoardPosition + 2 : yBoardPosition + 1)), chessPieceColor, possibleMoves);
-			updateKingOrKnightPossibleMoves(pieceInitialPosition, Vec2i((xBoardPosition == -1 ? xBoardPosition + 2 : xBoardPosition + 1),  yBoardPosition), chessPieceColor, possibleMoves);
-			updateKingOrKnightPossibleMoves(pieceInitialPosition, Vec2i((xBoardPosition == -1 ? xBoardPosition + 2 : xBoardPosition + 1), (yBoardPosition ==  1 ? yBoardPosition - 2 : yBoardPosition - 1)), chessPieceColor, possibleMoves);
-			updateKingOrKnightPossibleMoves(pieceInitialPosition, Vec2i( xBoardPosition,                                                  (yBoardPosition ==  1 ? yBoardPosition - 2 : yBoardPosition - 1)), chessPieceColor, possibleMoves);
-			updateKingOrKnightPossibleMoves(pieceInitialPosition, Vec2i((xBoardPosition ==  1 ? xBoardPosition - 2 : xBoardPosition - 1), (yBoardPosition ==  1 ? yBoardPosition - 2 : yBoardPosition - 1)), chessPieceColor, possibleMoves);
+			updateKingPossibleMoves(pieceInitialPosition, Vec2i((xBoardPosition ==  1 ? xBoardPosition - 2 : xBoardPosition - 1),  yBoardPosition), chessPieceColor, possibleMoves);
+			updateKingPossibleMoves(pieceInitialPosition, Vec2i((xBoardPosition == 1 ? xBoardPosition - 2 : xBoardPosition - 1), (yBoardPosition == -1 ? yBoardPosition + 2 : yBoardPosition + 1)), chessPieceColor, possibleMoves);
+			updateKingPossibleMoves(pieceInitialPosition, Vec2i(xBoardPosition, (yBoardPosition == -1 ? yBoardPosition + 2 : yBoardPosition + 1)), chessPieceColor, possibleMoves);
+			updateKingPossibleMoves(pieceInitialPosition, Vec2i((xBoardPosition == -1 ? xBoardPosition + 2 : xBoardPosition + 1), (yBoardPosition == -1 ? yBoardPosition + 2 : yBoardPosition + 1)), chessPieceColor, possibleMoves);
+			updateKingPossibleMoves(pieceInitialPosition, Vec2i((xBoardPosition == -1 ? xBoardPosition + 2 : xBoardPosition + 1), yBoardPosition), chessPieceColor, possibleMoves);
+			updateKingPossibleMoves(pieceInitialPosition, Vec2i((xBoardPosition == -1 ? xBoardPosition + 2 : xBoardPosition + 1), (yBoardPosition == 1 ? yBoardPosition - 2 : yBoardPosition - 1)), chessPieceColor, possibleMoves);
+			updateKingPossibleMoves(pieceInitialPosition, Vec2i(xBoardPosition, (yBoardPosition == 1 ? yBoardPosition - 2 : yBoardPosition - 1)), chessPieceColor, possibleMoves);
+			updateKingPossibleMoves(pieceInitialPosition, Vec2i((xBoardPosition == 1 ? xBoardPosition - 2 : xBoardPosition - 1), (yBoardPosition == 1 ? yBoardPosition - 2 : yBoardPosition - 1)), chessPieceColor, possibleMoves);
 
 			// left castling
 			Vec2i leftCastlingPosition = Vec2i(-2, chessPiece->getYPosition());
@@ -853,14 +880,14 @@ Vec2iArray* ChessBoard::computePossibleMovePositions(ChessPiece* chessPiece) {
 		}
 
 		case KNIGHT: {
-			updateKingOrKnightPossibleMoves(pieceInitialPosition, Vec2i(((xBoardPosition ==  1 || xBoardPosition ==  2) ? xBoardPosition - 3 : xBoardPosition - 2), ( yBoardPosition == -1                          ? yBoardPosition + 2 : yBoardPosition + 1)), chessPieceColor, possibleMoves);
-			updateKingOrKnightPossibleMoves(pieceInitialPosition, Vec2i(( xBoardPosition ==  1                          ? xBoardPosition - 2 : xBoardPosition - 1), ((yBoardPosition == -1 || yBoardPosition == -2) ? yBoardPosition + 3 : yBoardPosition + 2)), chessPieceColor, possibleMoves);
-			updateKingOrKnightPossibleMoves(pieceInitialPosition, Vec2i(( xBoardPosition == -1                          ? xBoardPosition + 2 : xBoardPosition + 1), ((yBoardPosition == -1 || yBoardPosition == -2) ? yBoardPosition + 3 : yBoardPosition + 2)), chessPieceColor, possibleMoves);
-			updateKingOrKnightPossibleMoves(pieceInitialPosition, Vec2i(((xBoardPosition == -1 || xBoardPosition == -2) ? xBoardPosition + 3 : xBoardPosition + 2), ( yBoardPosition == -1                          ? yBoardPosition + 2 : yBoardPosition + 1)), chessPieceColor, possibleMoves);
-			updateKingOrKnightPossibleMoves(pieceInitialPosition, Vec2i(((xBoardPosition == -1 || xBoardPosition == -2) ? xBoardPosition + 3 : xBoardPosition + 2), ( yBoardPosition ==  1                          ? yBoardPosition - 2 : yBoardPosition - 1)), chessPieceColor, possibleMoves);
-			updateKingOrKnightPossibleMoves(pieceInitialPosition, Vec2i(( xBoardPosition == -1                          ? xBoardPosition + 2 : xBoardPosition + 1), ((yBoardPosition ==  1 || yBoardPosition ==  2) ? yBoardPosition - 3 : yBoardPosition - 2)), chessPieceColor, possibleMoves);
-			updateKingOrKnightPossibleMoves(pieceInitialPosition, Vec2i(( xBoardPosition ==  1                          ? xBoardPosition - 2 : xBoardPosition - 1), ((yBoardPosition ==  1 || yBoardPosition ==  2) ? yBoardPosition - 3 : yBoardPosition - 2)), chessPieceColor, possibleMoves);
-			updateKingOrKnightPossibleMoves(pieceInitialPosition, Vec2i(((xBoardPosition ==  1 || xBoardPosition ==  2) ? xBoardPosition - 3 : xBoardPosition - 2), ( yBoardPosition ==  1                          ? yBoardPosition - 2 : yBoardPosition - 1)), chessPieceColor, possibleMoves);
+			updateKnightPossibleMoves(pieceInitialPosition, Vec2i(((xBoardPosition ==  1 || xBoardPosition ==  2) ? xBoardPosition - 3 : xBoardPosition - 2), ( yBoardPosition == -1                          ? yBoardPosition + 2 : yBoardPosition + 1)), chessPieceColor, possibleMoves);
+			updateKnightPossibleMoves(pieceInitialPosition, Vec2i(( xBoardPosition ==  1                          ? xBoardPosition - 2 : xBoardPosition - 1), ((yBoardPosition == -1 || yBoardPosition == -2) ? yBoardPosition + 3 : yBoardPosition + 2)), chessPieceColor, possibleMoves);
+			updateKnightPossibleMoves(pieceInitialPosition, Vec2i(( xBoardPosition == -1                          ? xBoardPosition + 2 : xBoardPosition + 1), ((yBoardPosition == -1 || yBoardPosition == -2) ? yBoardPosition + 3 : yBoardPosition + 2)), chessPieceColor, possibleMoves);
+			updateKnightPossibleMoves(pieceInitialPosition, Vec2i(((xBoardPosition == -1 || xBoardPosition == -2) ? xBoardPosition + 3 : xBoardPosition + 2), ( yBoardPosition == -1                          ? yBoardPosition + 2 : yBoardPosition + 1)), chessPieceColor, possibleMoves);
+			updateKnightPossibleMoves(pieceInitialPosition, Vec2i(((xBoardPosition == -1 || xBoardPosition == -2) ? xBoardPosition + 3 : xBoardPosition + 2), ( yBoardPosition ==  1                          ? yBoardPosition - 2 : yBoardPosition - 1)), chessPieceColor, possibleMoves);
+			updateKnightPossibleMoves(pieceInitialPosition, Vec2i(( xBoardPosition == -1                          ? xBoardPosition + 2 : xBoardPosition + 1), ((yBoardPosition ==  1 || yBoardPosition ==  2) ? yBoardPosition - 3 : yBoardPosition - 2)), chessPieceColor, possibleMoves);
+			updateKnightPossibleMoves(pieceInitialPosition, Vec2i(( xBoardPosition ==  1                          ? xBoardPosition - 2 : xBoardPosition - 1), ((yBoardPosition ==  1 || yBoardPosition ==  2) ? yBoardPosition - 3 : yBoardPosition - 2)), chessPieceColor, possibleMoves);
+			updateKnightPossibleMoves(pieceInitialPosition, Vec2i(((xBoardPosition ==  1 || xBoardPosition ==  2) ? xBoardPosition - 3 : xBoardPosition - 2), ( yBoardPosition ==  1                          ? yBoardPosition - 2 : yBoardPosition - 1)), chessPieceColor, possibleMoves);
 			break;
 		}
 
@@ -942,7 +969,21 @@ Vec2iArray* ChessBoard::computePossibleMovePositions(ChessPiece* chessPiece) {
 }
 
 
-bool ChessBoard::updateKingOrKnightPossibleMoves(Vec2i initialPosition, Vec2i finalPosition, ChessPieceColor chessPieceColor, Vec2iArray* possibleMoves) {
+bool ChessBoard::updateKingPossibleMoves(Vec2i initialPosition, Vec2i finalPosition, ChessPieceColor chessPieceColor, Vec2iArray* possibleMoves) {
+	MovePositionStatus movePositionStatus = isPositionAvailableToReceiveMove(initialPosition, finalPosition, chessPieceColor);
+	if (movePositionStatus == POSITION_AVAILABLE || movePositionStatus == POSITION_WITH_OPPONENT_PIECE) {
+		// TODO King possible moves without moving to check
+		//if (!isKingInCheck(finalPosition, chessPieceColor)) {
+			possibleMoves->push_back(finalPosition);
+			return true;
+		//}
+	}
+
+	return false;
+}
+
+
+bool ChessBoard::updateKnightPossibleMoves(Vec2i initialPosition, Vec2i finalPosition, ChessPieceColor chessPieceColor, Vec2iArray* possibleMoves) {
 	MovePositionStatus movePositionStatus = isPositionAvailableToReceiveMove(initialPosition, finalPosition, chessPieceColor);
 	if (movePositionStatus == POSITION_AVAILABLE || movePositionStatus == POSITION_WITH_OPPONENT_PIECE) {
 		possibleMoves->push_back(finalPosition);
@@ -1065,7 +1106,11 @@ bool ChessBoard::isCastlingPossible(ChessPiece* king, Vec2i kingFinalPosition) {
 				return false;
 			}
 				
-			// TODO check if any position from the king to the final position is attacked
+			// castling is only possible if none of the positions the king will cross are attacked			
+			if (isKingInCheck(Vec2i(kingFinalPosition.x() + 1, kingFinalPosition.y()), king->getChessPieceColor()) ||
+				isKingInCheck(Vec2i(kingFinalPosition.x() + 2, kingFinalPosition.y()), king->getChessPieceColor())) {
+				return false;
+			}
 			
 			return true;
 		} else if (kingFinalPosition.x() == -2) {
@@ -1082,7 +1127,11 @@ bool ChessBoard::isCastlingPossible(ChessPiece* king, Vec2i kingFinalPosition) {
 				return false;
 			}
 
-			// TODO check if any position from the king to the final position is attacked	
+			// castling is only possible if none of the positions the king will cross are attacked			
+			if (isKingInCheck(Vec2i(kingFinalPosition.x() - 1, kingFinalPosition.y()), king->getChessPieceColor()) ||
+				isKingInCheck(Vec2i(kingFinalPosition.x() - 2, kingFinalPosition.y()), king->getChessPieceColor())) {
+				return false;
+			}
 
 			return true;
 		}
@@ -1160,8 +1209,7 @@ void ChessBoard::managePromotionConversionAndReversion() {
 	}
 
 	// piece promotion done
-	if (_promotionConversionTimer->elapsedTime() > 2.0 * PROMOTION_SCALE_ANIMATION_DURATION_SECONDS) {
-		_selectorTimer->finish();
+	if (_promotionConversionTimer->elapsedTime() > 2.0 * PROMOTION_SCALE_ANIMATION_DURATION_SECONDS) {		
 		_piecePromotionInProgress = false;
 		_piecePromotionConversionInProgress = false;
 		_piecePromotionConversionFromHistoryInProgress = false;
@@ -1183,6 +1231,44 @@ void ChessBoard::removePromotionPiecesOnBoad() {
 	for (size_t i = 0; i < _promotionChessPieces.size(); ++i) {
 		_promotionChessPieces[i]->shrinkPiece();	
 	}
+}
+
+
+bool ChessBoard::isKingInCheck(Vec2i kingPosition, ChessPieceColor kingColor) {	
+	vector<ChessPiece*>& opponentPieces = (kingColor == WHITE ? _blackChessPieces : _whiteChessPieces);
+	ChessPieceColor opponentPieceColor = ChessPiece::getOpponentChessPieceColor(kingColor);
+		
+	for (size_t opponentPieceIndex = 0; opponentPieceIndex < opponentPieces.size(); ++opponentPieceIndex) {
+		Vec2iArray* opponentPieceAttackPositions = computePossibleMovePositions(opponentPieces[opponentPieceIndex]);
+
+		for (size_t attackPositionIndex = 0; attackPositionIndex < opponentPieceAttackPositions->size(); ++attackPositionIndex) {
+			Vec2i attackPosition = opponentPieceAttackPositions->at(attackPositionIndex);
+			if (attackPosition == kingPosition) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+
+bool ChessBoard::isKingInCheckMate(Vec2i kingCurrentPosition, ChessPieceColor kingColor) {
+	// see if king is in check or can move out of check
+	/*if (isKingInCheck(kingCurrentPosition, kingColor)) {
+		ChessPiece* kingPiece = (kingColor == WHITE ? _pieceKingWhite : _pieceKingBlack);
+		Vec2iArray* kingPossibleMoves = computePossibleMovePositions(kingPiece);
+
+		for (size_t kingPossibleMoveIndex = 0; kingPossibleMoveIndex < kingPossibleMoves->size(); ++kingPossibleMoveIndex) {
+			Vec2i kingPossibleMove = kingPossibleMoves->at(kingPossibleMoveIndex);
+			if (!isKingInCheck(kingPossibleMove, kingColor)) {
+				return false;
+			}			
+		}
+	}*/
+
+	// see if king can avoid check mate by moving one of its pieces
+	return _uciProtocol.isBoardPositionInCheckMate(computeBoardUCIMoves());
 }
 
 
@@ -1239,8 +1325,9 @@ bool ChessBoard::goToPreviousMoveInHistory() {
 
 
 		_animationDelayBetweenMoves->reset();
-		_animationInProgress = true;
 		--_currentPlayNumber;
+		_animationInProgress = true;
+		_gameStatus = IN_PROGRESS;			
 		return true;
 	}
 
@@ -1371,6 +1458,7 @@ void ChessBoard::switchPlayer() {
 	clearSelections();
 	clearPossibleMoves();
 	clearPromotionPieces();	
+	clearGameStatusText();
 
 	if (_pieceMovesHistoryBackwardsStack.empty()) {
 		_currentPlayer = ChessPiece::getOpponentChessPieceColor(_currentPlayer);
@@ -1384,6 +1472,86 @@ void ChessBoard::switchPlayer() {
 	} else {
 		updatePlayerStatus(_blackPlayerGameTimerText, _whitePlayerGameTimerText);
 	}
+
+
+	Vec2i kingPosition;
+	if (_currentPlayer == WHITE) {
+		kingPosition.x() = _pieceKingWhite->getXPosition();
+		kingPosition.y() = _pieceKingWhite->getYPosition();
+	}
+	else {
+		kingPosition.x() = _pieceKingBlack->getXPosition();
+		kingPosition.y() = _pieceKingBlack->getYPosition();
+	}
+
+	// when is a AI player the end game is automatically checked so there is no need to check it here
+	if (!isCurrentPlayerAI()) {
+		// see if there is a check mate
+		if (isKingInCheckMate(kingPosition, _currentPlayer)) {
+			if (_currentPlayer == WHITE) {
+				_gameStatus = BLACK_WON;
+			} else {
+				_gameStatus = WHITE_WON;
+			}
+
+			showGameStatus(_gameStatus);
+			return;
+		}
+	}
+
+	if (isKingInCheck(kingPosition, _currentPlayer)) {
+		if (_currentPlayer == WHITE) {
+			_gameStatus = WHITE_IN_CHECK;
+		}
+		else {
+			_gameStatus = BLACK_IN_CHECK;
+		}
+
+		showGameStatus(_gameStatus);
+	}
+}
+
+
+void ChessBoard::showGameStatus(GameStatus gameStatus) {
+	switch (gameStatus) {	
+		case WHITE_IN_CHECK: {
+			setGameStatusText(GAME_STATUS_TEXT_WHITE_IN_CHECK);
+			break;
+		}
+
+		case BLACK_IN_CHECK: {
+			setGameStatusText(GAME_STATUS_TEXT_BLACK_IN_CHECK);
+			break;
+		}
+
+		case WHITE_WON: {
+			setGameStatusText(GAME_STATUS_TEXT_WHITE_WON);
+			break;
+		}
+
+		case BLACK_WON: {
+			setGameStatusText(GAME_STATUS_TEXT_BLACK_WON);
+			break;
+		}
+
+		case DRAW: {
+			setGameStatusText(GAME_STATUS_TEXT_DRAW);
+			break;
+		}
+
+		default: {
+			break;
+		}
+	}
+}
+
+
+bool ChessBoard::isGameInProgress() {
+	if (_gameStatus == IN_PROGRESS || _gameStatus == WHITE_IN_CHECK || _gameStatus == BLACK_IN_CHECK) {
+		return true;
+	}
+
+	return false;
 }
 
 
@@ -1506,6 +1674,29 @@ ChessPiece* ChessBoard::getChessPieceAtBoardPosition(int xBoardPosition, int yBo
 }
 
 
+void ChessBoard::setupGameStatusText(Text3D* gameStatusText, float rotationAngle) {
+	MatrixTransform* gameStatusMT = new MatrixTransform();	
+
+	Geode* gameStatusGeode = new Geode();
+	gameStatusGeode->addDrawable(gameStatusText);
+
+	gameStatusMT->addChild(gameStatusGeode);
+	gameStatusMT->postMult(Matrix::rotate(rotationAngle, osg::Z_AXIS));	
+	_boardShadowedScene->addChild(gameStatusMT);
+}
+
+
+void ChessBoard::setGameStatusText(string text) {
+	_gameStatusTextWhiteSide->setText(text);
+	_gameStatusTextBlackSide->setText(text);
+}
+
+
+void ChessBoard::clearGameStatusText() {
+	setGameStatusText("");
+}
+
+
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  <chess AI> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 bool ChessBoard::isCurrentPlayerAI() {
 	if ((_currentPlayer == WHITE && _whitePlayerIsAI) || (_currentPlayer == BLACK && _blackPlayerIsAI)) {
@@ -1558,10 +1749,22 @@ bool ChessBoard::makeChessAIMove() {
 	string boardMoves = computeBoardUCIMoves();
 	_uciProtocol.setChessEngineBoardPosition(boardMoves);
 
-	string bestMove = _uciProtocol.receiveBestMoveFromChessEngine();
+	string chessAIBestMove = _uciProtocol.receiveBestMoveFromChessEngine();
+
+	// see if there is a check mate
+	if (chessAIBestMove.find(UCI_BESTMOVE_CHECK_MATE) != string::npos) {
+		if (_currentPlayer == WHITE) {
+			_gameStatus = BLACK_WON;
+		} else {
+			_gameStatus = WHITE_WON;
+		}
+
+		showGameStatus(_gameStatus);
+		return false;
+	}
 
 	UCIMove uciMove;
-	Vec2iArray* boardMove = uciMove.convertUCIMoveToBoardMove(bestMove);
+	Vec2iArray* boardMove = uciMove.convertUCIMoveToBoardMove(chessAIBestMove);
 
 	if (boardMove == NULL || boardMove->size() != 2) {
 		return false;
