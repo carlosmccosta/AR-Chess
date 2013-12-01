@@ -1,10 +1,17 @@
 #include "UCIProtocol.h"
 
 
-UCIProtocol::UCIProtocol() : _chessEngineReady(false) {}
-UCIProtocol::~UCIProtocol() {}
+UCIProtocol::UCIProtocol() : _chessEngineReady(false), _engineToGUICommunicationThread(NULL) {}
+UCIProtocol::~UCIProtocol() {
+	if (_engineToGUICommunicationThread != NULL) {
+		_engineToGUICommunicationThread->cancel();
+		
+		terminateChessEngine();
+	}
+}
 
 
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  <UCIProtocol> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 void UCIProtocol::setupUCIChessEngine(string enginePath) {
 	pipe guiToEnginePipe = create_pipe();
 	pipe engineToGuiPipe = create_pipe();
@@ -25,6 +32,9 @@ void UCIProtocol::setupUCIChessEngine(string enginePath) {
 	_engineToGuiStream = new stream<file_descriptor_source>(guiInputSource);
 
 	_chessEngineReady = true;
+
+	_engineToGUICommunicationThread = new EngineToGUICommunicationThread(_engineToGuiStream);
+	_engineToGUICommunicationThread->startThread();
 
 	sendMessageToEngine(UCI_MODE);
 	receiveChessEngineInfoAndOptions();
@@ -107,34 +117,45 @@ void UCIProtocol::setChessEngineBoardPosition(string pieceMoves) {
 }
 
 
-string UCIProtocol::receiveBestMoveFromChessEngine() {
-	sendMessageToEngine(UCI_GO);
+void UCIProtocol::startEngineMoveSearch(int moveTimeInMilleseconds) {
+	stringstream goMsg;
+	goMsg << UCI_GO;
 
-	string engineOutput;
-	do {
-		engineOutput = receiveMessageFromEngine();
-	} while (engineOutput.find(UCI_BESTMOVE) == string::npos);
+	if (moveTimeInMilleseconds > 0) {
+		goMsg << " " << UCI_MOVE_TIME << " " << moveTimeInMilleseconds;
+	}
 
+	sendMessageToEngine(goMsg.str());
+}
+
+
+string UCIProtocol::receiveBestMoveFromChessEngine() {	
+	string engineOutput = receiveMessageFromEngine();
 	stringstream outputSS(engineOutput);
+	
 	string bestMove;
-
-	// best move is 2nd token
-	outputSS >> bestMove;
-	outputSS >> bestMove;
-
-	return bestMove;
+	while (outputSS >> bestMove) {
+		if (bestMove == UCI_BESTMOVE) {
+			// best move is after UCI_BESTMOVE token
+			outputSS >> bestMove;
+			return bestMove;
+		}
+	}
+	
+	// engine still thinking
+	return string();
 }
 
 
 bool UCIProtocol::isBoardPositionInCheckMate(string pieceMoves) {
 	setChessEngineBoardPosition(pieceMoves);
-	string engineBestMove = receiveBestMoveFromChessEngine();
+	string engineBestMove = receiveBestMoveFromChessEngine();	
 
-	if (engineBestMove.find(UCI_BESTMOVE_CHECK_MATE) == string::npos) {
-		return false;
+	if (engineBestMove == UCI_BESTMOVE_CHECK_MATE) {
+		return true;
 	}
 
-	return true;
+	return false;
 }
 
 
@@ -149,8 +170,8 @@ void UCIProtocol::sendMessageToEngine(string msg) {
 
 string UCIProtocol::receiveMessageFromEngine() {
 	string engineOutput;
-	if (_engineToGuiStream->is_open()) {
-		std::getline(*_engineToGuiStream, engineOutput);
+	bool newDataReceived = _engineToGUICommunicationThread->getDataReceived(engineOutput);
+	if (newDataReceived) {		
 		logCommunicationFromEngine(engineOutput);
 	}
 
@@ -178,7 +199,58 @@ void UCIProtocol::logCommunicationFromEngine(string msg) {
 
 	std::ofstream logfile(_logfilePath, std::ofstream::out | std::ofstream::app);
 	if (logfile.is_open()) {
-		logfile << "<< " << msg << std::flush;
+		logfile /*<< "<< "*/ << msg << std::flush;
 		logfile.close();
 	}
 }
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  </UCIProtocol> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  <UCIProtocolSearchThread> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+EngineToGUICommunicationThread::EngineToGUICommunicationThread(stream<file_descriptor_source>* engineToGuiStream) : _engineToGuiStream(engineToGuiStream) {}
+
+int EngineToGUICommunicationThread::cancel() {
+	_finished = true;
+	while (Thread::isRunning()) Thread::YieldCurrentThread();
+	return 0;
+}
+
+
+void EngineToGUICommunicationThread::run() {
+	_finished = false;
+	_newDataAvailable = false;
+	do {
+		//Thread::YieldCurrentThread();		
+
+		string engineOutput;
+		if (_engineToGuiStream->is_open()) {
+			std::getline(*_engineToGuiStream, engineOutput);			
+		}
+		
+		addNewData(engineOutput);		
+	} while (!_finished);
+}
+
+void EngineToGUICommunicationThread::addNewData(string dataReceived) {
+	OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_mutex);
+	_dataReceived << dataReceived;
+	_newDataAvailable = true;
+}
+
+
+bool EngineToGUICommunicationThread::getDataReceived(string& dataReceived) {
+	OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_mutex);
+	if (_newDataAvailable) {
+		dataReceived = _dataReceived.str();
+		_newDataAvailable = false;
+		
+		_dataReceived.str(string());
+		_dataReceived.clear();
+
+		return true;
+	}
+
+	return false;
+}
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  </UCIProtocolSearchThread> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

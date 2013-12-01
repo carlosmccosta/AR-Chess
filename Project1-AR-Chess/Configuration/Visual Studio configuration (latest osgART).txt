@@ -185,6 +185,7 @@ osgd.lib
 osgDBd.lib
 osgFXd.lib
 osgGAd.lib
+OpenThreadsd.lib
 osgParticled.lib
 osgSimd.lib
 osgShadowd.lib

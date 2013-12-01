@@ -17,6 +17,9 @@
 #define UCI_QUIT "quit"
 
 #define UCI_BOOK_FILE_PATH "chessengines/book.bin"
+
+#define UCI_MOVE_TIME "movetime"
+#define UCI_MOVE_TIME_MS 800
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  </constants> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
@@ -24,6 +27,7 @@
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  <includes> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 // OSG includes
 #include <osg/Referenced>
+#include <OpenThreads/Thread>
 
 // boost includes
 #include <boost/process.hpp>
@@ -46,6 +50,28 @@ using osg::Referenced;
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  </includes> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  <UCIProtocolSearchThread> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+class EngineToGUICommunicationThread : public OpenThreads::Thread {
+public:
+	EngineToGUICommunicationThread() {}
+	EngineToGUICommunicationThread(stream<file_descriptor_source>* engineToGuiStream);
+	virtual int cancel();
+	virtual void run();
+	void addNewData(string dataReceived);
+	bool getDataReceived(string& dataReceived);
+protected:
+	OpenThreads::Mutex _mutex;
+	stringstream _dataReceived;
+	bool _finished;
+	bool _newDataAvailable;
+
+	stream<file_descriptor_source>* _engineToGuiStream;
+};
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  </UCIProtocolSearchThread> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  <UCIProtocol> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 class UCIProtocol : public Referenced {
 	public:
@@ -64,6 +90,7 @@ class UCIProtocol : public Referenced {
 		void terminateChessEngine();
 
 		void setChessEngineBoardPosition(string pieceMoves);
+		void startEngineMoveSearch(int moveTimeInMilleseconds = UCI_MOVE_TIME_MS);
 		string receiveBestMoveFromChessEngine();
 		bool isBoardPositionInCheckMate(string pieceMoves);
 
@@ -85,5 +112,7 @@ class UCIProtocol : public Referenced {
 		int _skillLevel;
 		stream<file_descriptor_sink>* _guiToEngineStream;
 		stream<file_descriptor_source>* _engineToGuiStream;
+
+		EngineToGUICommunicationThread* _engineToGUICommunicationThread;
 };
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  </UCIProtocol> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

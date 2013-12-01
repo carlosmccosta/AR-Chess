@@ -160,7 +160,7 @@ class ChessBoard : public osg::Referenced {
 		bool isOpponentPlayerAI();
 		string computeBoardUCIMoves();
 		void restartChessEngine(string enginePath = CHESS_ENGINE_FILE_PATH);
-		bool makeChessAIMove();
+		bool makeChessAIMove();		
 
 
 	private:
@@ -244,6 +244,8 @@ class ChessBoard : public osg::Referenced {
 		UCIProtocol _uciProtocol;		
 		bool _whitePlayerIsAI;
 		bool _blackPlayerIsAI;
-		int _engineSkillLevel;
+		int _chessEngineSkillLevel;
+		int _chessEngineMoveTimeInMilliseconds;
+		bool _chessEngineThinking;
 };
 

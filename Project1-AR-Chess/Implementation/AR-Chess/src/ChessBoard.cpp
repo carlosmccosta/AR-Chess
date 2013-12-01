@@ -12,8 +12,8 @@ ChessBoard::ChessBoard() {
 
 	_whitePlayerIsAI = false;
 	_blackPlayerIsAI = false;
-	_engineSkillLevel = 20;
-	_uciProtocol.startUCIChessEngine(CHESS_ENGINE_FILE_PATH, _engineSkillLevel, CHESS_ENGINE_LOGFILE);
+	_chessEngineSkillLevel = 20;
+	_uciProtocol.startUCIChessEngine(CHESS_ENGINE_FILE_PATH, _chessEngineSkillLevel, CHESS_ENGINE_LOGFILE);
 
 
 	// board setup
@@ -71,9 +71,7 @@ ChessBoard::ChessBoard() {
 	setupGameStatusText(_gameStatusTextBlackSide, osg::PI);		
 }
 
-ChessBoard::~ChessBoard() {
-	_uciProtocol.terminateChessEngine();
-}
+ChessBoard::~ChessBoard() {}
 
 
 void ChessBoard::setupImages() {
@@ -166,6 +164,10 @@ osgShadow::ShadowedScene* ChessBoard::setupBoard() {
 	_moveOriginPosition = Vec2i(0, 0);
 	_moveDestinationPosition = Vec2i(0, 0);
 	_currentPlayNumber = 0;
+
+	_chessEngineThinking = false;
+
+	_chessEngineMoveTimeInMilliseconds = (std::max)(CHESS_ENGINE_SKILL_LEVEL_TIME_ALLOWED_INCREASE_MS, _chessEngineSkillLevel * CHESS_ENGINE_SKILL_LEVEL_TIME_ALLOWED_INCREASE_MS);
 	
 	_whitePlayerGameTimer->finish();
 	_blackPlayerGameTimer->finish();
@@ -1799,7 +1801,7 @@ string ChessBoard::computeBoardUCIMoves() {
 
 
 void ChessBoard::restartChessEngine(string enginePath) {
-	_uciProtocol.startUCIChessEngine(enginePath, _engineSkillLevel, CHESS_ENGINE_LOGFILE);
+	_uciProtocol.startUCIChessEngine(enginePath, _chessEngineSkillLevel, CHESS_ENGINE_LOGFILE);
 }
 
 bool ChessBoard::makeChessAIMove() {
@@ -1808,17 +1810,28 @@ bool ChessBoard::makeChessAIMove() {
 	}
 
 	// update engine board
-	if (_pieceMovesHistoryBackwardsStack.empty()) {
+	/*if (_pieceMovesHistoryBackwardsStack.empty()) {
 		_uciProtocol.startNewChessGame(_engineSkillLevel);
-	}
+	}*/
 
-	string boardMoves = computeBoardUCIMoves();
-	_uciProtocol.setChessEngineBoardPosition(boardMoves);
+	if (!_chessEngineThinking) {
+		_chessEngineThinking = true;
+		string boardMoves = computeBoardUCIMoves();
+		_uciProtocol.setChessEngineBoardPosition(boardMoves);
+		_uciProtocol.startEngineMoveSearch(_chessEngineMoveTimeInMilliseconds);
+	}
 
 	string chessAIBestMove = _uciProtocol.receiveBestMoveFromChessEngine();
 
+	if (chessAIBestMove == "") {
+		// engine still thinking
+		return false;
+	}
+
+	_chessEngineThinking = false;
+
 	// see if there is a check mate
-	if (chessAIBestMove.find(UCI_BESTMOVE_CHECK_MATE) != string::npos) {
+	if (chessAIBestMove == UCI_BESTMOVE_CHECK_MATE) {
 		if (_currentPlayer == WHITE) {
 			_gameStatus = BLACK_WON;
 		} else {
