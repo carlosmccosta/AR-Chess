@@ -56,8 +56,8 @@
 #define GAME_STATUS_NEW_GAME_H_C "Started new game (Human vs Computer)"
 #define GAME_STATUS_NEW_GAME_C_C "Started new game (Computer vs Computer)"
 
-#define GAME_STATUS_TEXT_WHITE_IN_CHECK "White king in check!"
-#define GAME_STATUS_TEXT_BLACK_IN_CHECK "Black king in check!"
+#define GAME_STATUS_TEXT_WHITE_IN_CHECK "White king is in check!"
+#define GAME_STATUS_TEXT_BLACK_IN_CHECK "Black king is in check!"
 #define GAME_STATUS_TEXT_DRAW "Draw!"
 #define GAME_STATUS_TEXT_WHITE_WON "White player won!"
 #define GAME_STATUS_TEXT_BLACK_WON "Black player won!"

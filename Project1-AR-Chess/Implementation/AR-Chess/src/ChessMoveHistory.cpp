@@ -19,7 +19,7 @@ ChessMoveHistory::~ChessMoveHistory() {}
 
 
 void ChessMoveHistory::moveBackInHistory() {
-	_pieceMoved->changePosition(_pieceMovedOriginPosition.x(), _pieceMovedOriginPosition.y(), _playNumberOfLastMove - 1);
+	_pieceMoved->changePositionWithAnimation(_pieceMovedOriginPosition.x(), _pieceMovedOriginPosition.y(), _playNumberOfLastMove - 1);
 	_pieceMoved->setPieceMovedPreviously(_pieceHasMovedPriviously);
 	if (_pieceRemoved != NULL) {
 		_pieceRemoved->reinsertPieceOnBoard();
@@ -28,7 +28,7 @@ void ChessMoveHistory::moveBackInHistory() {
 
 
 void ChessMoveHistory::moveFowardInHistory() {
-	_pieceMoved->changePosition(_pieceMovedDestinationPosition.x(), _pieceMovedDestinationPosition.y(), _playNumberOfLastMove);
+	_pieceMoved->changePositionWithAnimation(_pieceMovedDestinationPosition.x(), _pieceMovedDestinationPosition.y(), _playNumberOfLastMove);
 
 	if (_pieceRemoved != NULL) {
 		_pieceRemoved->removePieceFromBoard();

@@ -151,9 +151,14 @@ float ChessPiece::getPieceModelSize(ChessPieceType chessPieceType) {
 }
 
 
-void ChessPiece::changePosition(int xPosition, int yPosition, int playNumber) {
+void ChessPiece::setPosition(int xPosition, int yPosition) {
 	_xPosition = xPosition;
 	_yPosition = yPosition;
+}
+
+
+void ChessPiece::changePositionWithAnimation(int xPosition, int yPosition, int playNumber) {
+	setPosition(xPosition, yPosition);
 
 	if (!_pieceMovedPreviously && _chessPieceType == PAWN) {
 		if ((_chessPieceColor == WHITE && yPosition == -1) || (_chessPieceColor == BLACK && yPosition == 1)) {
@@ -180,7 +185,7 @@ void ChessPiece::resetPosition() {
 		loadPieceModel(_chessPieceInitialType);
 	}
 
-	changePosition(_xInitialPosition, _yInitialPosition);
+	changePositionWithAnimation(_xInitialPosition, _yInitialPosition);
 	_pieceMovedPreviously = false;
 	_piecePlayable = true;
 	_pawnMakeDoubleStep = false;
@@ -216,7 +221,7 @@ void ChessPiece::removePieceFromBoard() {
 
 void ChessPiece::reinsertPieceOnBoard() {
 	_piecePlayable = true;
-	changePosition(_xPosition, _yPosition);
+	changePositionWithAnimation(_xPosition, _yPosition);
 }
 
 

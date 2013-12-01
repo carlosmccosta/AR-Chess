@@ -48,7 +48,9 @@ class ChessPiece : public osg::Referenced {
 		string getPieceModelPath(ChessPieceType chessPieceType, ChessPieceColor chessPieceColor);
 		float getPieceModelSize(ChessPieceType chessPieceType);		
 
-		void changePosition(int xPosition, int yPosition, int playNumber = -1);
+		void setPosition(int xPosition, int yPosition);
+		void changePositionWithAnimation(int xPosition, int yPosition, int playNumber = -1);
+		
 		void resetPosition();
 		void removePieceFromBoard();
 		void reinsertPieceOnBoard();		
@@ -63,6 +65,7 @@ class ChessPiece : public osg::Referenced {
 		int getXPosition() const { return _xPosition; }		
 		int getYPosition() const { return _yPosition; }		
 		bool isPiecePlayable() const { return _piecePlayable; }		
+		void setPiecePlayable(bool val) { _piecePlayable = val; }
 		MatrixTransform* getPieceMatrixTransform() const { return _pieceMatrixTransform; }
 		bool getPieceMovedPreviously() const { return _pieceMovedPreviously; }
 		void setPieceMovedPreviously(bool val) { _pieceMovedPreviously = val; }

@@ -120,23 +120,23 @@ class ChessBoard : public osg::Referenced {
 		bool hightLighPossibleMove(int xBoardPosition, int yBoardPosition);
 		ChessPiece* selectPosition(int xBoardPosition, int yBoardPosition, ChessPieceColor chessPieceColor, bool selectOnlyIfExistsPiece = false, AuxiliarySelector auxiliarySelector = SELECTOR_INVALID);
 		bool showPossibleMoves(ChessPiece* chessPiece);
-		Vec2iArray* computePossibleMovePositions(ChessPiece* chessPiece);
-		bool updateKingPossibleMoves(Vec2i initialPosition, Vec2i finalPosition, ChessPieceColor chessPieceColor, Vec2iArray* possibleMoves);
-		bool updateKnightPossibleMoves(Vec2i initialPosition, Vec2i finalPosition, ChessPieceColor chessPieceColor, Vec2iArray* possibleMoves);
-		ChessPiece* updatePossibleMovesAlongLine(Vec2i initialPosition, int xIncrement, int yIncrement, ChessPieceColor chessPieceColor, Vec2iArray* possibleMoves);
+		Vec2iArray* computePossibleMovePositions(ChessPiece* chessPiece, bool seeIfWhiteKingIsInCheck, bool seeIfBlackKingIsInCheck);
+		bool isMoveValid(Vec2i initialPosition, Vec2i finalPosition, ChessPieceColor chessPieceColor, bool seeIfWhiteKingIsInCheck, bool seeIfBlackKingIsInCheck);
+		bool updatePossibleMoves(Vec2i initialPosition, Vec2i finalPosition, ChessPieceColor chessPieceColor, bool seeIfWhiteKingIsInCheck, bool seeIfBlackKingIsInCheck, Vec2iArray* possibleMoves);
+		ChessPiece* updatePossibleMovesAlongLine(Vec2i initialPosition, int xIncrement, int yIncrement, ChessPieceColor chessPieceColor, bool seeIfWhiteKingIsInCheck, bool seeIfBlackKingIsInCheck, Vec2iArray* possibleMoves);		
 		MovePositionStatus isPositionAvailableToReceiveMove(Vec2i initialPosition, Vec2i finalPosition, ChessPieceColor currentPlayer);
 
 		void moveChessPieceWithAnimation(ChessPiece* chessPieceToMove, Vec2i finalPosition);
 		ChessPiece* removeChessPieceWithAnimation(Vec2i boardPositionOfPieceToRemove, ChessPieceColor chessPieceColor);
 		bool checkAndPerformCastling(ChessPiece* chessPieceToMove, Vec2i finalPosition);
-		bool isCastlingPossible(ChessPiece* king, Vec2i kingFinalPosition);
+		bool isCastlingPossible(ChessPiece* king, Vec2i kingFinalPosition, bool seeIfWhiteKingIsInCheck, bool seeIfBlackKingIsInCheck);
 		ChessPiece*  isEnPassantPawnCapturePossible(ChessPiece* chessPieceToMove, Vec2i finalPosition, ChessPieceColor currentPlayerPieceColor);
 		bool checkAndPerformPromotion(ChessPiece* chessPieceMoved, Vec2i finalPosition);
 		void setupPromotionPiecesOnBoad(ChessPieceColor chessPieceColor);
 		void managePromotionConversionAndReversion();
 		void removePromotionPiecesOnBoad();
 
-		bool isKingInCheck(Vec2i kingPosition, ChessPieceColor kingColor);
+		bool isKingInCheck(Vec2i kingPosition, ChessPieceColor kingColor, bool seeIfWhiteKingIsInCheck, bool seeIfBlackKingIsInCheck);
 		bool isKingInCheckMate(Vec2i kingPosition, ChessPieceColor kingColor);
 
 		bool goToPreviousMoveInHistory();

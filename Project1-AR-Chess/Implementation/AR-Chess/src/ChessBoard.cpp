@@ -798,7 +798,12 @@ ChessPiece* ChessBoard::selectPosition(int xBoardPosition, int yBoardPosition, C
 
 bool ChessBoard::showPossibleMoves(ChessPiece* chessPiece) {
 	clearPossibleMoves();
-	_pieceSelectedPossibleMoves = computePossibleMovePositions(_pieceToMove);
+
+	ChessPieceColor chessPieceColor = chessPiece->getChessPieceColor();
+	bool seeIfWhiteKingIsInCheck = (chessPieceColor == WHITE ? true : false);
+	bool seeIfBlackKingIsInCheck = (chessPieceColor == BLACK ? true : false);
+
+	_pieceSelectedPossibleMoves = computePossibleMovePositions(_pieceToMove, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck);
 
 	if (!_pieceSelectedPossibleMoves->empty()) {		
 		for (size_t i = 0; i < _pieceSelectedPossibleMoves->size(); ++i) {
@@ -812,91 +817,95 @@ bool ChessBoard::showPossibleMoves(ChessPiece* chessPiece) {
 }
 
 
-Vec2iArray* ChessBoard::computePossibleMovePositions(ChessPiece* chessPiece) {
+Vec2iArray* ChessBoard::computePossibleMovePositions(ChessPiece* chessPiece, bool seeIfWhiteKingIsInCheck, bool seeIfBlackKingIsInCheck) {
+	Vec2iArray* possibleMoves = new Vec2iArray();
+	
+	if (!chessPiece->isPiecePlayable()) {
+		return possibleMoves;
+	}
+
 	int xBoardPosition = chessPiece->getXPosition();
 	int yBoardPosition = chessPiece->getYPosition();
 	Vec2i pieceInitialPosition = Vec2i(xBoardPosition, yBoardPosition);
 	ChessPieceType chessPieceType = chessPiece->getChessPieceType();
 	ChessPieceColor chessPieceColor = chessPiece->getChessPieceColor();
-	ChessPieceColor opponentChessPieceColor = ChessPiece::getOpponentChessPieceColor(chessPieceColor);
-
-	Vec2iArray* possibleMoves = new Vec2iArray();
+	ChessPieceColor opponentChessPieceColor = ChessPiece::getOpponentChessPieceColor(chessPieceColor);	
 
 	switch (chessPieceType) {		
 		case KING: {
 			// normal moves
-			updateKingPossibleMoves(pieceInitialPosition, Vec2i((xBoardPosition ==  1 ? xBoardPosition - 2 : xBoardPosition - 1),  yBoardPosition), chessPieceColor, possibleMoves);
-			updateKingPossibleMoves(pieceInitialPosition, Vec2i((xBoardPosition == 1 ? xBoardPosition - 2 : xBoardPosition - 1), (yBoardPosition == -1 ? yBoardPosition + 2 : yBoardPosition + 1)), chessPieceColor, possibleMoves);
-			updateKingPossibleMoves(pieceInitialPosition, Vec2i(xBoardPosition, (yBoardPosition == -1 ? yBoardPosition + 2 : yBoardPosition + 1)), chessPieceColor, possibleMoves);
-			updateKingPossibleMoves(pieceInitialPosition, Vec2i((xBoardPosition == -1 ? xBoardPosition + 2 : xBoardPosition + 1), (yBoardPosition == -1 ? yBoardPosition + 2 : yBoardPosition + 1)), chessPieceColor, possibleMoves);
-			updateKingPossibleMoves(pieceInitialPosition, Vec2i((xBoardPosition == -1 ? xBoardPosition + 2 : xBoardPosition + 1), yBoardPosition), chessPieceColor, possibleMoves);
-			updateKingPossibleMoves(pieceInitialPosition, Vec2i((xBoardPosition == -1 ? xBoardPosition + 2 : xBoardPosition + 1), (yBoardPosition == 1 ? yBoardPosition - 2 : yBoardPosition - 1)), chessPieceColor, possibleMoves);
-			updateKingPossibleMoves(pieceInitialPosition, Vec2i(xBoardPosition, (yBoardPosition == 1 ? yBoardPosition - 2 : yBoardPosition - 1)), chessPieceColor, possibleMoves);
-			updateKingPossibleMoves(pieceInitialPosition, Vec2i((xBoardPosition == 1 ? xBoardPosition - 2 : xBoardPosition - 1), (yBoardPosition == 1 ? yBoardPosition - 2 : yBoardPosition - 1)), chessPieceColor, possibleMoves);
+			updatePossibleMoves(pieceInitialPosition, Vec2i((xBoardPosition ==  1 ? xBoardPosition - 2 : xBoardPosition - 1),  yBoardPosition),                                                  chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
+			updatePossibleMoves(pieceInitialPosition, Vec2i((xBoardPosition ==  1 ? xBoardPosition - 2 : xBoardPosition - 1), (yBoardPosition == -1 ? yBoardPosition + 2 : yBoardPosition + 1)), chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
+			updatePossibleMoves(pieceInitialPosition, Vec2i(xBoardPosition,                                                   (yBoardPosition == -1 ? yBoardPosition + 2 : yBoardPosition + 1)), chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
+			updatePossibleMoves(pieceInitialPosition, Vec2i((xBoardPosition == -1 ? xBoardPosition + 2 : xBoardPosition + 1), (yBoardPosition == -1 ? yBoardPosition + 2 : yBoardPosition + 1)), chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
+			updatePossibleMoves(pieceInitialPosition, Vec2i((xBoardPosition == -1 ? xBoardPosition + 2 : xBoardPosition + 1),  yBoardPosition),                                                  chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
+			updatePossibleMoves(pieceInitialPosition, Vec2i((xBoardPosition == -1 ? xBoardPosition + 2 : xBoardPosition + 1), (yBoardPosition == 1 ? yBoardPosition - 2 : yBoardPosition - 1)),  chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
+			updatePossibleMoves(pieceInitialPosition, Vec2i(xBoardPosition,                                                   (yBoardPosition == 1 ? yBoardPosition - 2 : yBoardPosition - 1)),  chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
+			updatePossibleMoves(pieceInitialPosition, Vec2i((xBoardPosition == 1 ? xBoardPosition - 2 : xBoardPosition - 1),  (yBoardPosition == 1 ? yBoardPosition - 2 : yBoardPosition - 1)),  chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
 
 			// left castling
 			Vec2i leftCastlingPosition = Vec2i(-2, chessPiece->getYPosition());
-			if (isCastlingPossible(chessPiece, leftCastlingPosition)) {
+			if (isCastlingPossible(chessPiece, leftCastlingPosition, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck)) {
 				possibleMoves->push_back(leftCastlingPosition);
 			}
 
 			// right castling
 			Vec2i rightCastlingPosition = Vec2i(3, chessPiece->getYPosition());
-			if (isCastlingPossible(chessPiece, rightCastlingPosition)) {
+			if (isCastlingPossible(chessPiece, rightCastlingPosition, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck)) {
 				possibleMoves->push_back(rightCastlingPosition);
 			}
-
+			
 			break;
 		}
 
 		case QUEEN: {
 			// vertical moves
-			updatePossibleMovesAlongLine(pieceInitialPosition,  0,  1, chessPieceColor, possibleMoves);
-			updatePossibleMovesAlongLine(pieceInitialPosition,  0, -1, chessPieceColor, possibleMoves);
+			updatePossibleMovesAlongLine(pieceInitialPosition,  0,  1, chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
+			updatePossibleMovesAlongLine(pieceInitialPosition,  0, -1, chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
 			
 			// horizontal moves
-			updatePossibleMovesAlongLine(pieceInitialPosition, -1,  0, chessPieceColor, possibleMoves);
-			updatePossibleMovesAlongLine(pieceInitialPosition,  1,  0, chessPieceColor, possibleMoves);
+			updatePossibleMovesAlongLine(pieceInitialPosition, -1,  0, chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
+			updatePossibleMovesAlongLine(pieceInitialPosition,  1,  0, chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
 
 			// diagonal moves
-			updatePossibleMovesAlongLine(pieceInitialPosition, -1,  1, chessPieceColor, possibleMoves);
-			updatePossibleMovesAlongLine(pieceInitialPosition,  1,  1, chessPieceColor, possibleMoves);
-			updatePossibleMovesAlongLine(pieceInitialPosition,  1, -1, chessPieceColor, possibleMoves);
-			updatePossibleMovesAlongLine(pieceInitialPosition, -1, -1, chessPieceColor, possibleMoves);
+			updatePossibleMovesAlongLine(pieceInitialPosition, -1,  1, chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
+			updatePossibleMovesAlongLine(pieceInitialPosition,  1,  1, chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
+			updatePossibleMovesAlongLine(pieceInitialPosition,  1, -1, chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
+			updatePossibleMovesAlongLine(pieceInitialPosition, -1, -1, chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
 
 			break;
 		}
 
 		case ROOK: {
 			// vertical moves
-			updatePossibleMovesAlongLine(pieceInitialPosition, 0, 1, chessPieceColor, possibleMoves);
-			updatePossibleMovesAlongLine(pieceInitialPosition, 0, -1, chessPieceColor, possibleMoves);
+			updatePossibleMovesAlongLine(pieceInitialPosition, 0, 1, chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
+			updatePossibleMovesAlongLine(pieceInitialPosition, 0, -1, chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
 
 			// horizontal moves
-			updatePossibleMovesAlongLine(pieceInitialPosition, -1, 0, chessPieceColor, possibleMoves);
-			updatePossibleMovesAlongLine(pieceInitialPosition, 1, 0, chessPieceColor, possibleMoves);
+			updatePossibleMovesAlongLine(pieceInitialPosition, -1, 0, chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
+			updatePossibleMovesAlongLine(pieceInitialPosition, 1, 0, chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
 
 			break;
 		}
 
 		case KNIGHT: {
-			updateKnightPossibleMoves(pieceInitialPosition, Vec2i(((xBoardPosition ==  1 || xBoardPosition ==  2) ? xBoardPosition - 3 : xBoardPosition - 2), ( yBoardPosition == -1                          ? yBoardPosition + 2 : yBoardPosition + 1)), chessPieceColor, possibleMoves);
-			updateKnightPossibleMoves(pieceInitialPosition, Vec2i(( xBoardPosition ==  1                          ? xBoardPosition - 2 : xBoardPosition - 1), ((yBoardPosition == -1 || yBoardPosition == -2) ? yBoardPosition + 3 : yBoardPosition + 2)), chessPieceColor, possibleMoves);
-			updateKnightPossibleMoves(pieceInitialPosition, Vec2i(( xBoardPosition == -1                          ? xBoardPosition + 2 : xBoardPosition + 1), ((yBoardPosition == -1 || yBoardPosition == -2) ? yBoardPosition + 3 : yBoardPosition + 2)), chessPieceColor, possibleMoves);
-			updateKnightPossibleMoves(pieceInitialPosition, Vec2i(((xBoardPosition == -1 || xBoardPosition == -2) ? xBoardPosition + 3 : xBoardPosition + 2), ( yBoardPosition == -1                          ? yBoardPosition + 2 : yBoardPosition + 1)), chessPieceColor, possibleMoves);
-			updateKnightPossibleMoves(pieceInitialPosition, Vec2i(((xBoardPosition == -1 || xBoardPosition == -2) ? xBoardPosition + 3 : xBoardPosition + 2), ( yBoardPosition ==  1                          ? yBoardPosition - 2 : yBoardPosition - 1)), chessPieceColor, possibleMoves);
-			updateKnightPossibleMoves(pieceInitialPosition, Vec2i(( xBoardPosition == -1                          ? xBoardPosition + 2 : xBoardPosition + 1), ((yBoardPosition ==  1 || yBoardPosition ==  2) ? yBoardPosition - 3 : yBoardPosition - 2)), chessPieceColor, possibleMoves);
-			updateKnightPossibleMoves(pieceInitialPosition, Vec2i(( xBoardPosition ==  1                          ? xBoardPosition - 2 : xBoardPosition - 1), ((yBoardPosition ==  1 || yBoardPosition ==  2) ? yBoardPosition - 3 : yBoardPosition - 2)), chessPieceColor, possibleMoves);
-			updateKnightPossibleMoves(pieceInitialPosition, Vec2i(((xBoardPosition ==  1 || xBoardPosition ==  2) ? xBoardPosition - 3 : xBoardPosition - 2), ( yBoardPosition ==  1                          ? yBoardPosition - 2 : yBoardPosition - 1)), chessPieceColor, possibleMoves);
+			updatePossibleMoves(pieceInitialPosition, Vec2i(((xBoardPosition ==  1 || xBoardPosition ==  2) ? xBoardPosition - 3 : xBoardPosition - 2), ( yBoardPosition == -1                          ? yBoardPosition + 2 : yBoardPosition + 1)), chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
+			updatePossibleMoves(pieceInitialPosition, Vec2i(( xBoardPosition ==  1                          ? xBoardPosition - 2 : xBoardPosition - 1), ((yBoardPosition == -1 || yBoardPosition == -2) ? yBoardPosition + 3 : yBoardPosition + 2)), chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
+			updatePossibleMoves(pieceInitialPosition, Vec2i(( xBoardPosition == -1                          ? xBoardPosition + 2 : xBoardPosition + 1), ((yBoardPosition == -1 || yBoardPosition == -2) ? yBoardPosition + 3 : yBoardPosition + 2)), chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
+			updatePossibleMoves(pieceInitialPosition, Vec2i(((xBoardPosition == -1 || xBoardPosition == -2) ? xBoardPosition + 3 : xBoardPosition + 2), ( yBoardPosition == -1                          ? yBoardPosition + 2 : yBoardPosition + 1)), chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
+			updatePossibleMoves(pieceInitialPosition, Vec2i(((xBoardPosition == -1 || xBoardPosition == -2) ? xBoardPosition + 3 : xBoardPosition + 2), ( yBoardPosition ==  1                          ? yBoardPosition - 2 : yBoardPosition - 1)), chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
+			updatePossibleMoves(pieceInitialPosition, Vec2i(( xBoardPosition == -1                          ? xBoardPosition + 2 : xBoardPosition + 1), ((yBoardPosition ==  1 || yBoardPosition ==  2) ? yBoardPosition - 3 : yBoardPosition - 2)), chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
+			updatePossibleMoves(pieceInitialPosition, Vec2i(( xBoardPosition ==  1                          ? xBoardPosition - 2 : xBoardPosition - 1), ((yBoardPosition ==  1 || yBoardPosition ==  2) ? yBoardPosition - 3 : yBoardPosition - 2)), chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
+			updatePossibleMoves(pieceInitialPosition, Vec2i(((xBoardPosition ==  1 || xBoardPosition ==  2) ? xBoardPosition - 3 : xBoardPosition - 2), ( yBoardPosition ==  1                          ? yBoardPosition - 2 : yBoardPosition - 1)), chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
 			break;
 		}
 
 		case BISHOP: {
 			// diagonal moves
-			updatePossibleMovesAlongLine(pieceInitialPosition, -1, 1, chessPieceColor, possibleMoves);
-			updatePossibleMovesAlongLine(pieceInitialPosition, 1, 1, chessPieceColor, possibleMoves);
-			updatePossibleMovesAlongLine(pieceInitialPosition, 1, -1, chessPieceColor, possibleMoves);
-			updatePossibleMovesAlongLine(pieceInitialPosition, -1, -1, chessPieceColor, possibleMoves);
+			updatePossibleMovesAlongLine(pieceInitialPosition, -1, 1, chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
+			updatePossibleMovesAlongLine(pieceInitialPosition, 1, 1, chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
+			updatePossibleMovesAlongLine(pieceInitialPosition, 1, -1, chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
+			updatePossibleMovesAlongLine(pieceInitialPosition, -1, -1, chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
 
 			break;
 		}
@@ -911,9 +920,11 @@ Vec2iArray* ChessBoard::computePossibleMovePositions(ChessPiece* chessPiece) {
 			}
 			
 			Vec2i pawnFrontPosition = Vec2i(pawnFrontPositionX, pawnFrontPositionY);
+			bool positionInFrontFree = false;
 			if (getChessPieceAtBoardPosition(pawnFrontPositionX, pawnFrontPositionY, chessPieceColor) == NULL &&
 				getChessPieceAtBoardPosition(pawnFrontPositionX, pawnFrontPositionY, opponentChessPieceColor) == NULL) {
-				possibleMoves->push_back(pawnFrontPosition);
+				updatePossibleMoves(pieceInitialPosition, pawnFrontPosition, chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
+				positionInFrontFree = true;
 			}
 
 			// double move
@@ -922,9 +933,10 @@ Vec2iArray* ChessBoard::computePossibleMovePositions(ChessPiece* chessPiece) {
 				int pawnDoubleMoveFrontPositionY = (chessPieceColor == WHITE ? -1 : 1);
 
 				Vec2i pawnDoubleMoveFrontPosition = Vec2i(pawnDoubleMoveFrontPositionX, pawnDoubleMoveFrontPositionY);
-				if (getChessPieceAtBoardPosition(pawnDoubleMoveFrontPositionX, pawnDoubleMoveFrontPositionY, chessPieceColor) == NULL &&
+				if (positionInFrontFree &&
+					getChessPieceAtBoardPosition(pawnDoubleMoveFrontPositionX, pawnDoubleMoveFrontPositionY, chessPieceColor) == NULL &&
 					getChessPieceAtBoardPosition(pawnDoubleMoveFrontPositionX, pawnDoubleMoveFrontPositionY, opponentChessPieceColor) == NULL) {
-					possibleMoves->push_back(pawnDoubleMoveFrontPosition);
+					updatePossibleMoves(pieceInitialPosition, pawnDoubleMoveFrontPosition, chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
 				}
 			}
 
@@ -939,7 +951,7 @@ Vec2iArray* ChessBoard::computePossibleMovePositions(ChessPiece* chessPiece) {
 			Vec2i pawnLeftPosition = Vec2i(pawnLeftPositionX, pawnLeftPositionY);
 			if (getChessPieceAtBoardPosition(pawnLeftPositionX, pawnLeftPositionY, opponentChessPieceColor) != NULL ||
 				isEnPassantPawnCapturePossible(chessPiece, pawnLeftPosition, chessPieceColor)) {
-				possibleMoves->push_back(pawnLeftPosition);
+				updatePossibleMoves(pieceInitialPosition, pawnLeftPosition, chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
 			}
 
 
@@ -954,7 +966,7 @@ Vec2iArray* ChessBoard::computePossibleMovePositions(ChessPiece* chessPiece) {
 			Vec2i pawnRightPosition = Vec2i(pawnRightPositionX, pawnRightPositionY);
 			if (getChessPieceAtBoardPosition(pawnRightPositionX, pawnRightPositionY, opponentChessPieceColor) != NULL ||
 				isEnPassantPawnCapturePossible(chessPiece, pawnRightPosition, chessPieceColor)) {
-				possibleMoves->push_back(pawnRightPosition);
+				updatePossibleMoves(pieceInitialPosition, pawnRightPosition, chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck, possibleMoves);
 			}
 
 			break;
@@ -969,23 +981,52 @@ Vec2iArray* ChessBoard::computePossibleMovePositions(ChessPiece* chessPiece) {
 }
 
 
-bool ChessBoard::updateKingPossibleMoves(Vec2i initialPosition, Vec2i finalPosition, ChessPieceColor chessPieceColor, Vec2iArray* possibleMoves) {
+bool ChessBoard::isMoveValid(Vec2i initialPosition, Vec2i finalPosition, ChessPieceColor chessPieceColor, bool seeIfWhiteKingIsInCheck, bool seeIfBlackKingIsInCheck) {
+	bool moveValid = false;
+
 	MovePositionStatus movePositionStatus = isPositionAvailableToReceiveMove(initialPosition, finalPosition, chessPieceColor);
 	if (movePositionStatus == POSITION_AVAILABLE || movePositionStatus == POSITION_WITH_OPPONENT_PIECE) {
-		// TODO King possible moves without moving to check
-		//if (!isKingInCheck(finalPosition, chessPieceColor)) {
-			possibleMoves->push_back(finalPosition);
-			return true;
-		//}
+		if ((chessPieceColor == WHITE && seeIfWhiteKingIsInCheck) || (chessPieceColor == BLACK && seeIfBlackKingIsInCheck)) {
+			ChessPiece* pieceGoingToBeMoved = getChessPieceAtBoardPosition(initialPosition.x(), initialPosition.y(), chessPieceColor);
+			ChessPiece* pieceGoingToBeCaptured = getChessPieceAtBoardPosition(finalPosition.x(), finalPosition.y(), ChessPiece::getOpponentChessPieceColor(chessPieceColor));
+
+			if (pieceGoingToBeMoved != NULL) {
+				pieceGoingToBeMoved->setPosition(finalPosition.x(), finalPosition.y());
+			}
+
+			if (pieceGoingToBeCaptured != NULL) {
+				pieceGoingToBeCaptured->setPiecePlayable(false);
+			}
+
+			Vec2i kingPosition;
+			if (pieceGoingToBeMoved != NULL && pieceGoingToBeMoved->getChessPieceType() == KING) {
+				kingPosition = finalPosition;
+			} else {
+				kingPosition = (chessPieceColor == WHITE ? Vec2i(_pieceKingWhite->getXPosition(), _pieceKingWhite->getYPosition()) : Vec2i(_pieceKingBlack->getXPosition(), _pieceKingBlack->getYPosition()));
+			}
+
+			if (!isKingInCheck(kingPosition, chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck)) {
+				moveValid = true;
+			}
+
+			if (pieceGoingToBeMoved != NULL) {
+				pieceGoingToBeMoved->setPosition(initialPosition.x(), initialPosition.y());
+			}
+
+			if (pieceGoingToBeCaptured != NULL) {
+				pieceGoingToBeCaptured->setPiecePlayable(true);
+			}
+		} else {			
+			moveValid = true;
+		}
 	}
 
-	return false;
+	return moveValid;
 }
 
 
-bool ChessBoard::updateKnightPossibleMoves(Vec2i initialPosition, Vec2i finalPosition, ChessPieceColor chessPieceColor, Vec2iArray* possibleMoves) {
-	MovePositionStatus movePositionStatus = isPositionAvailableToReceiveMove(initialPosition, finalPosition, chessPieceColor);
-	if (movePositionStatus == POSITION_AVAILABLE || movePositionStatus == POSITION_WITH_OPPONENT_PIECE) {
+bool ChessBoard::updatePossibleMoves(Vec2i initialPosition, Vec2i finalPosition, ChessPieceColor chessPieceColor, bool seeIfWhiteKingIsInCheck, bool seeIfBlackKingIsInCheck, Vec2iArray* possibleMoves) {
+	if (possibleMoves != NULL && isMoveValid(initialPosition, finalPosition, chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck)) {
 		possibleMoves->push_back(finalPosition);
 		return true;
 	}
@@ -994,7 +1035,7 @@ bool ChessBoard::updateKnightPossibleMoves(Vec2i initialPosition, Vec2i finalPos
 }
 
 
-ChessPiece* ChessBoard::updatePossibleMovesAlongLine(Vec2i initialPosition, int xIncrement, int yIncrement, ChessPieceColor chessPieceColor, Vec2iArray* possibleMoves) {
+ChessPiece* ChessBoard::updatePossibleMovesAlongLine(Vec2i initialPosition, int xIncrement, int yIncrement, ChessPieceColor chessPieceColor, bool seeIfWhiteKingIsInCheck, bool seeIfBlackKingIsInCheck, Vec2iArray* possibleMoves) {
 	Vec2i finalPosition = initialPosition;
 	ChessPieceColor opponentChessPieceColor = ChessPiece::getOpponentChessPieceColor(chessPieceColor);
 	ChessPiece* pieceInFinalPosition = NULL;
@@ -1024,7 +1065,11 @@ ChessPiece* ChessBoard::updatePossibleMovesAlongLine(Vec2i initialPosition, int 
 
 		// found opponent piece or empty square
 		pieceInFinalPosition = getChessPieceAtBoardPosition(finalPosition.x(), finalPosition.y(), opponentChessPieceColor);
-		possibleMoves->push_back(Vec2i(finalPosition.x(), finalPosition.y()));
+
+
+		if (isMoveValid(initialPosition, finalPosition, chessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck)) {
+			possibleMoves->push_back(Vec2i(finalPosition.x(), finalPosition.y()));
+		}
 	} while (pieceInFinalPosition == NULL);
 
 	return pieceInFinalPosition;
@@ -1055,7 +1100,7 @@ MovePositionStatus ChessBoard::isPositionAvailableToReceiveMove(Vec2i initialPos
 
 void ChessBoard::moveChessPieceWithAnimation(ChessPiece* chessPieceToMove, Vec2i finalPosition) {			
 	if (!checkAndPerformCastling(chessPieceToMove, finalPosition)) {
-		chessPieceToMove->changePosition(finalPosition.x(), finalPosition.y(), _currentPlayNumber);
+		chessPieceToMove->changePositionWithAnimation(finalPosition.x(), finalPosition.y(), _currentPlayNumber);
 	} else {
 		_pieceMovesHistoryBackwardsStack.back()->setPerformedCastling(true);
 	}	
@@ -1075,14 +1120,17 @@ ChessPiece* ChessBoard::removeChessPieceWithAnimation(Vec2i boardPositionOfPiece
 
 
 bool ChessBoard::checkAndPerformCastling(ChessPiece* king, Vec2i finalPosition) {
-	if (isCastlingPossible(king, finalPosition)) {
+	bool seeIfWhiteKingIsInCheck = (king->getChessPieceColor() == WHITE ? true : false);
+	bool seeIfBlackKingIsInCheck = (king->getChessPieceColor() == BLACK ? true : false);
+
+	if (isCastlingPossible(king, finalPosition, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck)) {
 		ChessPiece* rook = getChessPieceAtBoardPosition((finalPosition.x() == 3 ? 4 : -4), king->getYPosition(), king->getChessPieceColor());
 
 		// move king
-		king->changePosition(finalPosition.x(), finalPosition.y(), _currentPlayNumber);
+		king->changePositionWithAnimation(finalPosition.x(), finalPosition.y(), _currentPlayNumber);
 
 		// move rook
-		rook->changePosition((finalPosition.x() == 3 ? 2 : -1), finalPosition.y(), _currentPlayNumber);
+		rook->changePositionWithAnimation((finalPosition.x() == 3 ? 2 : -1), finalPosition.y(), _currentPlayNumber);
 		return true;
 	}
 
@@ -1090,9 +1138,9 @@ bool ChessBoard::checkAndPerformCastling(ChessPiece* king, Vec2i finalPosition) 
 }
 
 
-bool ChessBoard::isCastlingPossible(ChessPiece* king, Vec2i kingFinalPosition) {
+bool ChessBoard::isCastlingPossible(ChessPiece* king, Vec2i kingFinalPosition, bool seeIfWhiteKingIsInCheck, bool seeIfBlackKingIsInCheck) {
 	// castling can only be done by the king and a rook if none of then has moved, and there is no pieces between then
-	if (king->getChessPieceType() == KING && !king->getPieceMovedPreviously()) {				
+	if (king->getChessPieceType() == KING && !king->getPieceMovedPreviously()) {		
 		if (kingFinalPosition.x() == 3) {
 			// check if there are pieces blocking the castling
 			if (getChessPieceAtBoardPosition(2, king->getYPosition(), WHITE) != NULL || getChessPieceAtBoardPosition(2, king->getYPosition(), BLACK) != NULL ||
@@ -1105,11 +1153,19 @@ bool ChessBoard::isCastlingPossible(ChessPiece* king, Vec2i kingFinalPosition) {
 			if (rookRightSide == NULL || rookRightSide->getPieceMovedPreviously()) {
 				return false;
 			}
-				
+						
+
 			// castling is only possible if none of the positions the king will cross are attacked			
-			if (isKingInCheck(Vec2i(kingFinalPosition.x() + 1, kingFinalPosition.y()), king->getChessPieceColor()) ||
-				isKingInCheck(Vec2i(kingFinalPosition.x() + 2, kingFinalPosition.y()), king->getChessPieceColor())) {
-				return false;
+			if (king->getChessPieceColor() == WHITE && seeIfWhiteKingIsInCheck || king->getChessPieceColor() == BLACK && seeIfBlackKingIsInCheck) { // to avoid circular calls between white and black possible moves
+				// king can't castle when is in check
+				if (isKingInCheck(Vec2i(king->getXPosition(), king->getYPosition()), king->getChessPieceColor(), seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck)) {
+					return false;
+				}
+
+				if (isKingInCheck(Vec2i(2, kingFinalPosition.y()), king->getChessPieceColor(), seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck) ||
+					isKingInCheck(Vec2i(3, kingFinalPosition.y()), king->getChessPieceColor(), seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck)) {
+					return false;
+				}
 			}
 			
 			return true;
@@ -1125,12 +1181,19 @@ bool ChessBoard::isCastlingPossible(ChessPiece* king, Vec2i kingFinalPosition) {
 			ChessPiece* rookRightSide = getChessPieceAtBoardPosition(-4, king->getYPosition(), king->getChessPieceColor());
 			if (rookRightSide == NULL || rookRightSide->getPieceMovedPreviously()) {
 				return false;
-			}
+			}			
 
-			// castling is only possible if none of the positions the king will cross are attacked			
-			if (isKingInCheck(Vec2i(kingFinalPosition.x() - 1, kingFinalPosition.y()), king->getChessPieceColor()) ||
-				isKingInCheck(Vec2i(kingFinalPosition.x() - 2, kingFinalPosition.y()), king->getChessPieceColor())) {
-				return false;
+			// castling is only possible if none of the positions the king will cross are attacked
+			if (king->getChessPieceColor() == WHITE && seeIfWhiteKingIsInCheck || king->getChessPieceColor() == BLACK && seeIfBlackKingIsInCheck) { // to avoid circular calls between white and black possible moves
+				// king can't castle when is in check
+				if (isKingInCheck(Vec2i(king->getXPosition(), king->getYPosition()), king->getChessPieceColor(), seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck)) {
+					return false;
+				}
+
+				if (isKingInCheck(Vec2i(-1, kingFinalPosition.y()), king->getChessPieceColor(), seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck) ||
+					isKingInCheck(Vec2i(-2, kingFinalPosition.y()), king->getChessPieceColor(), seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck)) {
+					return false;
+				}
 			}
 
 			return true;
@@ -1234,12 +1297,12 @@ void ChessBoard::removePromotionPiecesOnBoad() {
 }
 
 
-bool ChessBoard::isKingInCheck(Vec2i kingPosition, ChessPieceColor kingColor) {	
+bool ChessBoard::isKingInCheck(Vec2i kingPosition, ChessPieceColor kingColor, bool seeIfWhiteKingIsInCheck, bool seeIfBlackKingIsInCheck) {
 	vector<ChessPiece*>& opponentPieces = (kingColor == WHITE ? _blackChessPieces : _whiteChessPieces);
-	ChessPieceColor opponentPieceColor = ChessPiece::getOpponentChessPieceColor(kingColor);
+	ChessPieceColor opponentPieceColor = ChessPiece::getOpponentChessPieceColor(kingColor);	
 		
 	for (size_t opponentPieceIndex = 0; opponentPieceIndex < opponentPieces.size(); ++opponentPieceIndex) {
-		Vec2iArray* opponentPieceAttackPositions = computePossibleMovePositions(opponentPieces[opponentPieceIndex]);
+		Vec2iArray* opponentPieceAttackPositions = computePossibleMovePositions(opponentPieces[opponentPieceIndex], seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck);
 
 		for (size_t attackPositionIndex = 0; attackPositionIndex < opponentPieceAttackPositions->size(); ++attackPositionIndex) {
 			Vec2i attackPosition = opponentPieceAttackPositions->at(attackPositionIndex);
@@ -1282,7 +1345,7 @@ bool ChessBoard::goToPreviousMoveInHistory() {
 			ChessPiece* rook = getChessPieceAtBoardPosition((king->getXPosition() == 3 ? 2 : -1), king->getYPosition(), king->getChessPieceColor());
 
 			if (rook != NULL) {
-				rook->changePosition((king->getXPosition() == 3 ? 4 : -4), king->getYPosition());
+				rook->changePositionWithAnimation((king->getXPosition() == 3 ? 4 : -4), king->getYPosition());
 				rook->setPieceMovedPreviously(false);
 			}
 		}
@@ -1345,7 +1408,7 @@ bool ChessBoard::goToNextMoveInHistory() {
 			ChessPiece* rook = getChessPieceAtBoardPosition((moveFowardInfo->getPieceMovedDestinationPosition().x() == 3 ? 4 : -4), king->getYPosition(), king->getChessPieceColor());
 
 			if (rook != NULL) {
-				rook->changePosition((moveFowardInfo->getPieceMovedDestinationPosition().x() == 3 ? 2 : -1), king->getYPosition());
+				rook->changePositionWithAnimation((moveFowardInfo->getPieceMovedDestinationPosition().x() == 3 ? 2 : -1), king->getYPosition());
 			}
 		}
 
@@ -1499,7 +1562,10 @@ void ChessBoard::switchPlayer() {
 		}
 	}
 
-	if (isKingInCheck(kingPosition, _currentPlayer)) {
+	bool seeIfWhiteKingIsInCheck = (_currentPlayer == WHITE ? true : false);
+	bool seeIfBlackKingIsInCheck = (_currentPlayer == BLACK ? true : false);
+
+	if (isKingInCheck(kingPosition, _currentPlayer, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck)) {
 		if (_currentPlayer == WHITE) {
 			_gameStatus = WHITE_IN_CHECK;
 		}
