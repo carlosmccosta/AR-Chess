@@ -90,7 +90,7 @@ namespace ChessUtils {
 	Geometry* createHUDQuadWithTexture(string filename, int width, int height, Vec3 corner = Vec3(0, 0, 0));
 
 	Camera* createHUDCamera(unsigned int screenWidth, unsigned int screenHeight);
-	Text3D* createText3D(const string& content, Font3D* font3D, const Vec3& position = Vec3(0, 0, 1), float size = 7, float depth = 1);
+	Text3D* createText3D(const string& content, Font3D* font3D, const Vec3& position = Vec3(0, 0, 1), float size = 7, float depth = 1, osgText::TextBase::AlignmentType textAligment = osgText::TextBase::LEFT_CENTER);
 
 	AnimationPath* createChessPieceMoveAnimationPath(Vec3f initialPosition, Vec3f finalPosition, float rotationAngle = 0, Vec3f rotationAxis = osg::Z_AXIS, float pieceTravelSpeed = PIECE_MOVE_ANIMATION_TRAVEL_SPEED, size_t numberSamplesInPath = 128);
 	AnimationPath* createScaleAnimationPath(Vec3f position, osgAnimation::Motion* scaleEaseMotion, float animationTimeSeconds = PROMOTION_SCALE_ANIMATION_DURATION_SECONDS, size_t numberSamplesInPath = 128);

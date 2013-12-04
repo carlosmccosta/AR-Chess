@@ -44,6 +44,7 @@ ChessBoard::ChessBoard() {
 	_boardSquareSelections = new Group();
 	_boardSquarePossibleMoves = new Group();
 	_promotionPieces = new Group();
+	_chessEngineSkillLevelSelectors = new Group();
 	
 	setupBoardPieces();
 	setupPlayersTimers();
@@ -61,14 +62,25 @@ ChessBoard::ChessBoard() {
 	_boardShadowedScene->addChild(_boardSquareSelections);
 	_boardShadowedScene->addChild(_boardSquarePossibleMoves);
 	_boardShadowedScene->addChild(_promotionPieces);
+	_boardShadowedScene->addChild(_chessEngineSkillLevelSelectors);
 
-	_gameStatusTextWhiteSide = ChessUtils::createText3D("Game Status", _font3D, Vec3(0, -4.65 * BOARD_SQUARE_SIZE, PLAYER_STATUS_Z_OFFSET), GAME_STATUS_TEXT_SIZE, GAME_STATUS_TEXT_DEPTH);
+	
+	_gameStatusTextWhiteSide = ChessUtils::createText3D("Game Status", _font3D, Vec3(0,0,0), GAME_STATUS_TEXT_SIZE, GAME_STATUS_TEXT_DEPTH);
 	_gameStatusTextWhiteSide->setAlignment(osgText::TextBase::CENTER_CENTER);
-	_gameStatusTextBlackSide = ChessUtils::createText3D("Game Status", _font3D, Vec3(0, -4.65 * BOARD_SQUARE_SIZE, PLAYER_STATUS_Z_OFFSET), GAME_STATUS_TEXT_SIZE, GAME_STATUS_TEXT_DEPTH);
-	_gameStatusTextBlackSide->setAlignment(osgText::TextBase::CENTER_CENTER);
+	_gameStatusTextWhiteSide->setColor(GAME_STATUS_TEXT_COLOR);
+	_gameStatusTextWhiteSideMT = wrapText(_gameStatusTextWhiteSide);
+	_boardShadowedScene->addChild(wrapAndChangeMTPosition(_gameStatusTextWhiteSideMT, GAME_STATUS_TEXT_POSITION_WHITE_SIDE, Vec3(0, 0, 0), 0.0));
 
-	setupGameStatusText(_gameStatusTextWhiteSide, 0.0);
-	setupGameStatusText(_gameStatusTextBlackSide, osg::PI);		
+	_gameStatusTextBlackSide = ChessUtils::createText3D("Game Status", _font3D, Vec3(0, 0, 0), GAME_STATUS_TEXT_SIZE, GAME_STATUS_TEXT_DEPTH);
+	_gameStatusTextBlackSide->setAlignment(osgText::TextBase::CENTER_CENTER);	
+	_gameStatusTextBlackSide->setColor(GAME_STATUS_TEXT_COLOR);
+	_gameStatusTextBlackSideMT = wrapText(_gameStatusTextBlackSide);	
+	_boardShadowedScene->addChild(wrapAndChangeMTPosition(_gameStatusTextBlackSideMT, GAME_STATUS_TEXT_POSITION_BLACK_SIDE, Vec3(0, 0, 0), osg::PI));
+
+	_gameStatusTextVisible = false;
+	_chessEngineSkillLevelSelectionInProgress = false;
+
+	setupAISkillLevelSelectors();
 }
 
 ChessBoard::~ChessBoard() {}
@@ -325,7 +337,7 @@ MatrixTransform* ChessBoard::setupAuxiliarySelector(Vec2i position, Image* image
 }
 
 
-bool ChessBoard::updateBoard(Vec2i selectorBoardPosition) {
+bool ChessBoard::updateBoard(Vec2i selectorBoardPosition) {	
 	bool gameInProgress = isGameInProgress();
 
 	if (gameInProgress) {
@@ -357,8 +369,7 @@ bool ChessBoard::updateBoard(Vec2i selectorBoardPosition) {
 					_animationInProgress = false;
 					_boardReseting = false;
 					clearPromotionPieces();
-				}
-				else {
+				} else {
 					if (!_piecePromotionInProgressAborted) {
 						switchPlayer();
 					}
@@ -371,8 +382,7 @@ bool ChessBoard::updateBoard(Vec2i selectorBoardPosition) {
 					// go back in history moves again if a human player is against a AI player and it wants to undo last move
 					if (isCurrentPlayerAI() && !isOpponentPlayerAI() && !_pieceMovesHistoryFowardStack.empty()) {
 						goToPreviousMoveInHistory();
-					}
-					else {
+					} else {
 						_animationInProgress = false;
 					}
 				}
@@ -405,6 +415,10 @@ bool ChessBoard::updateBoard(Vec2i selectorBoardPosition) {
 			if (_selectorTimer->elapsedTime_m() > PADDLE_TIME_TO_SELECT_POSITION) {
 				_selectorTimer->reset();
 				
+				if (_chessEngineSkillLevelSelectionInProgress) {
+					return manageAISkillLevelSelection(selectorBoardPosition);
+				}
+
 				if (positionIsAnAuxiliarySelector != SELECTOR_INVALID || _piecePromotionInProgress) {
 					processAuxiliarySelector(positionIsAnAuxiliarySelector);
 					return true;
@@ -482,21 +496,23 @@ void ChessBoard::processAuxiliarySelector(AuxiliarySelector auxiliarySelector) {
 	if (auxiliarySelector == SELECTOR_NEW_GAME_H_H_WHITE_SIDE || auxiliarySelector == SELECTOR_NEW_GAME_H_H_BLACK_SIDE) {
 		_whitePlayerIsAI = false;
 		_blackPlayerIsAI = false;
-		resetBoard();		
+		resetBoard();
 		_animationInProgress = true;
-	} else if (auxiliarySelector == SELECTOR_NEW_GAME_H_C_WHITE_SIDE || auxiliarySelector == SELECTOR_NEW_GAME_H_C_BLACK_SIDE) {		
-		restartChessEngine();		
-
+	} else if (auxiliarySelector == SELECTOR_NEW_GAME_H_C_WHITE_SIDE || auxiliarySelector == SELECTOR_NEW_GAME_H_C_BLACK_SIDE) {				
+		showAISkillLevelSelectors();
+		_chessEngineSkillLevelSelectionInProgress = true;
 		_whitePlayerIsAI = false;
-		_blackPlayerIsAI = true;
+		_blackPlayerIsAI = true;		
 		resetBoard();		
+		_gameStatus = DRAW;
 		_animationInProgress = true;
-	} else if (auxiliarySelector == SELECTOR_NEW_GAME_C_C_WHITE_SIDE || auxiliarySelector == SELECTOR_NEW_GAME_C_C_BLACK_SIDE) {		
-		restartChessEngine();		
-		
+	} else if (auxiliarySelector == SELECTOR_NEW_GAME_C_C_WHITE_SIDE || auxiliarySelector == SELECTOR_NEW_GAME_C_C_BLACK_SIDE) {				
+		showAISkillLevelSelectors();
+		_chessEngineSkillLevelSelectionInProgress = true;
 		_whitePlayerIsAI = true;
 		_blackPlayerIsAI = true;
-		resetBoard();		
+		resetBoard();
+		_gameStatus = DRAW;
 		_animationInProgress = true;
 	} else if (auxiliarySelector == SELECTOR_PREVIOUS_MOVE_WHITE_SIDE || auxiliarySelector == SELECTOR_PREVIOUS_MOVE_BLACK_SIDE) {
 		if (goToPreviousMoveInHistory()) {
@@ -611,9 +627,11 @@ bool ChessBoard::processSecondSelection(Vec2i selectorBoardPosition, bool player
 			hightLighPosition(selectorBoardPosition.x(), selectorBoardPosition.y());			
 		}
 		
+
 		_animationDelayBetweenMoves->reset();
 		_animationInProgress = true;
 		++_currentPlayNumber;
+		updateGameStatusWithCheckOrCheckMate();
 
 		return true;
 	}
@@ -1337,6 +1355,49 @@ bool ChessBoard::isKingInCheckMate(Vec2i kingCurrentPosition, ChessPieceColor ki
 }
 
 
+void ChessBoard::updateGameStatusWithCheckOrCheckMate() {
+	clearGameStatusText();
+
+	Vec2i opponentKingPosition;
+	ChessPieceColor opponentChessPieceColor = ChessPiece::getOpponentChessPieceColor(_currentPlayer);
+	if (opponentChessPieceColor == WHITE) {
+		opponentKingPosition.x() = _pieceKingWhite->getXPosition();
+		opponentKingPosition.y() = _pieceKingWhite->getYPosition(); 
+	} else {
+		opponentKingPosition.x() = _pieceKingBlack->getXPosition();
+		opponentKingPosition.y() = _pieceKingBlack->getYPosition();
+	}
+
+	// when is a AI player the end game is automatically checked so there is no need to check it here
+	if (!isCurrentPlayerAI()) {
+		// see if there is a check mate
+		if (isKingInCheckMate(opponentKingPosition, opponentChessPieceColor)) {
+			if (opponentChessPieceColor == WHITE) {
+				_gameStatus = BLACK_WON;
+			} else {
+				_gameStatus = WHITE_WON;
+			}
+
+			showGameStatus(_gameStatus);
+			return;
+		}
+	}
+
+	bool seeIfWhiteKingIsInCheck = (opponentChessPieceColor == WHITE ? true : false);
+	bool seeIfBlackKingIsInCheck = (opponentChessPieceColor == BLACK ? true : false);
+
+	if (isKingInCheck(opponentKingPosition, opponentChessPieceColor, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck)) {
+		if (opponentChessPieceColor == WHITE) {
+			_gameStatus = WHITE_IN_CHECK;
+		} else {
+			_gameStatus = BLACK_IN_CHECK;
+		}
+
+		showGameStatus(_gameStatus);
+	}
+}
+
+
 bool ChessBoard::goToPreviousMoveInHistory() {
 	if (!_pieceMovesHistoryBackwardsStack.empty()) {
 		ChessMoveHistory* moveBackInfo = _pieceMovesHistoryBackwardsStack.back();	
@@ -1523,7 +1584,6 @@ void ChessBoard::switchPlayer() {
 	clearSelections();
 	clearPossibleMoves();
 	clearPromotionPieces();	
-	clearGameStatusText();
 
 	if (_pieceMovesHistoryBackwardsStack.empty()) {
 		_currentPlayer = ChessPiece::getOpponentChessPieceColor(_currentPlayer);
@@ -1536,47 +1596,7 @@ void ChessBoard::switchPlayer() {
 		updatePlayerStatus(_whitePlayerGameTimerText, _blackPlayerGameTimerText);
 	} else {
 		updatePlayerStatus(_blackPlayerGameTimerText, _whitePlayerGameTimerText);
-	}
-
-
-	Vec2i kingPosition;
-	if (_currentPlayer == WHITE) {
-		kingPosition.x() = _pieceKingWhite->getXPosition();
-		kingPosition.y() = _pieceKingWhite->getYPosition();
-	}
-	else {
-		kingPosition.x() = _pieceKingBlack->getXPosition();
-		kingPosition.y() = _pieceKingBlack->getYPosition();
-	}
-
-	// when is a AI player the end game is automatically checked so there is no need to check it here
-	if (!isCurrentPlayerAI()) {
-		// see if there is a check mate
-		if (isKingInCheckMate(kingPosition, _currentPlayer)) {
-			if (_currentPlayer == WHITE) {
-				_gameStatus = BLACK_WON;
-			} else {
-				_gameStatus = WHITE_WON;
-			}
-
-			showGameStatus(_gameStatus);
-			return;
-		}
-	}
-
-	bool seeIfWhiteKingIsInCheck = (_currentPlayer == WHITE ? true : false);
-	bool seeIfBlackKingIsInCheck = (_currentPlayer == BLACK ? true : false);
-
-	if (isKingInCheck(kingPosition, _currentPlayer, seeIfWhiteKingIsInCheck, seeIfBlackKingIsInCheck)) {
-		if (_currentPlayer == WHITE) {
-			_gameStatus = WHITE_IN_CHECK;
-		}
-		else {
-			_gameStatus = BLACK_IN_CHECK;
-		}
-
-		showGameStatus(_gameStatus);
-	}
+	}	
 }
 
 
@@ -1742,26 +1762,165 @@ ChessPiece* ChessBoard::getChessPieceAtBoardPosition(int xBoardPosition, int yBo
 }
 
 
-void ChessBoard::setupGameStatusText(Text3D* gameStatusText, float rotationAngle) {
-	MatrixTransform* gameStatusMT = new MatrixTransform();	
+MatrixTransform* ChessBoard::wrapAndChangeMTPosition(MatrixTransform* mt, Vec3 position, Vec3 scale, float rotationAngle) {
+	mt->postMult(Matrix::scale(scale));	
+
+	MatrixTransform* positionMT = new MatrixTransform();
+	positionMT->postMult(Matrix::rotate(rotationAngle, osg::Z_AXIS));
+	positionMT->postMult(Matrix::translate(position));
+	positionMT->addChild(mt);
+
+	return positionMT;	
+}
+
+
+MatrixTransform* ChessBoard::wrapText(Text3D* gameStatusText) {
+	MatrixTransform* gameStatusMT = new MatrixTransform();		
 
 	Geode* gameStatusGeode = new Geode();
 	gameStatusGeode->addDrawable(gameStatusText);
 
-	gameStatusMT->addChild(gameStatusGeode);
-	gameStatusMT->postMult(Matrix::rotate(rotationAngle, osg::Z_AXIS));	
-	_boardShadowedScene->addChild(gameStatusMT);
+	gameStatusMT->addChild(gameStatusGeode);	
+
+	return gameStatusMT;
 }
 
 
 void ChessBoard::setGameStatusText(string text) {
 	_gameStatusTextWhiteSide->setText(text);
 	_gameStatusTextBlackSide->setText(text);
+
+	_gameStatusTextWhiteSideMT->postMult(Matrix::scale(0, 0, 0));
+	_gameStatusTextBlackSideMT->postMult(Matrix::scale(0, 0, 0));
+
+	osgAnimation::Motion* scaleEaseMotion = new osgAnimation::OutBackMotion(0, GAME_STATUS_TEXT_SCALE_ANIMATION_DURATION_SECONDS, 1.0);
+	osg::AnimationPathCallback* animationPathCallback = new osg::AnimationPathCallback(ChessUtils::createScaleAnimationPath(Vec3(0,0,0), scaleEaseMotion, GAME_STATUS_TEXT_SCALE_ANIMATION_DURATION_SECONDS));
+	
+	_gameStatusTextWhiteSideMT->setUpdateCallback(animationPathCallback);
+	_gameStatusTextBlackSideMT->setUpdateCallback(animationPathCallback);
+
+	_gameStatusTextVisible = true;
 }
 
 
-void ChessBoard::clearGameStatusText() {
-	setGameStatusText("");
+void ChessBoard::clearGameStatusText() {	
+	if (_gameStatusTextVisible) {
+		osgAnimation::Motion* scaleEaseMotion = new osgAnimation::OutBackMotion(1.0, GAME_STATUS_TEXT_SCALE_ANIMATION_DURATION_SECONDS, -1.0);
+		osg::AnimationPathCallback* animationPathCallback = new osg::AnimationPathCallback(ChessUtils::createScaleAnimationPath(Vec3(0, 0, 0), scaleEaseMotion, GAME_STATUS_TEXT_SCALE_ANIMATION_DURATION_SECONDS));
+
+		_gameStatusTextWhiteSideMT->setUpdateCallback(animationPathCallback);
+		_gameStatusTextBlackSideMT->setUpdateCallback(animationPathCallback);
+
+		_gameStatusTextVisible = false;
+	}
+}
+
+
+void ChessBoard::setupAISkillLevelSelectors() {
+	vector<string> aiSkillLevels;
+	aiSkillLevels.push_back("0");
+	aiSkillLevels.push_back("2");
+	aiSkillLevels.push_back("4");
+	aiSkillLevels.push_back("8");
+	aiSkillLevels.push_back("12");
+	aiSkillLevels.push_back("16");
+	aiSkillLevels.push_back("18");
+	aiSkillLevels.push_back("20");
+	aiSkillLevels.push_back("Skill level");
+
+	_chessEngineSkillLevelSelectorsMTs.clear();
+	_chessEngineSkillLevelSelectors->addChild(setupAISkillLevelSelectorsOneSide(aiSkillLevels, BOARD_SQUARE_SIZE, 0.0));
+	_chessEngineSkillLevelSelectors->addChild(setupAISkillLevelSelectorsOneSide(aiSkillLevels, BOARD_SQUARE_SIZE, osg::PI));
+}
+
+
+MatrixTransform* ChessBoard::setupAISkillLevelSelectorsOneSide(const vector<string>& skillLevels, int sceneYPositionIncrement, float rotationAngle) {
+	MatrixTransform* positionMT = new MatrixTransform();
+	positionMT->postMult(Matrix::rotate(rotationAngle, osg::Z_AXIS));		
+	
+	for (size_t i = 0; i < skillLevels.size(); ++i) {
+		float textXPosition;
+		float textYPosition;
+		if (i == skillLevels.size() - 1) {
+			textXPosition = 0;
+			textYPosition = -sceneYPositionIncrement * 0.5;
+		} else {			
+			textXPosition = ((int)i - 4) * BOARD_SQUARE_SIZE + BOARD_SQUARE_SIZE * 0.5;
+			textYPosition = -sceneYPositionIncrement * 1.5;
+		}
+
+		Text3D* text = ChessUtils::createText3D(skillLevels[i], _font3D, Vec3(textXPosition, textYPosition, PLAYER_STATUS_Z_OFFSET), GAME_STATUS_TEXT_SIZE, GAME_STATUS_TEXT_DEPTH, osgText::TextBase::CENTER_CENTER);
+		
+		if (i == skillLevels.size() - 1) {
+			text->setColor(SKILL_LEVEL_SELECTOR_TITLE_COLOR);
+		} else {
+			text->setColor(SKILL_LEVEL_SELECTOR_NUMBER_COLOR);
+		}
+		
+		MatrixTransform* wrapedText = wrapText(text);
+		wrapedText->postMult(Matrix::scale(Vec3(0, 0, 0)));
+
+		_chessEngineSkillLevelSelectorsMTs.push_back(wrapedText);
+		positionMT->addChild(wrapedText);
+	}
+
+	return positionMT;
+}
+
+
+void ChessBoard::showAISkillLevelSelectors() {
+	for (size_t i = 0; i < _chessEngineSkillLevelSelectorsMTs.size(); ++i) {
+		osgAnimation::Motion* scaleEaseMotion = new osgAnimation::OutBackMotion(0, GAME_STATUS_TEXT_SCALE_ANIMATION_DURATION_SECONDS, 1.0);
+		osg::AnimationPathCallback* animationPathCallback = new osg::AnimationPathCallback(ChessUtils::createScaleAnimationPath(Vec3(0, 0, 0), scaleEaseMotion, GAME_STATUS_TEXT_SCALE_ANIMATION_DURATION_SECONDS));
+		_chessEngineSkillLevelSelectorsMTs[i]->setUpdateCallback(animationPathCallback);
+	}
+}
+
+
+void ChessBoard::hideAISkillLevelSelectors() {
+	for (size_t i = 0; i < _chessEngineSkillLevelSelectorsMTs.size(); ++i) {
+		osgAnimation::Motion* scaleEaseMotion = new osgAnimation::OutBackMotion(1.0, GAME_STATUS_TEXT_SCALE_ANIMATION_DURATION_SECONDS, -1.0);
+		osg::AnimationPathCallback* animationPathCallback = new osg::AnimationPathCallback(ChessUtils::createScaleAnimationPath(Vec3(0, 0, 0), scaleEaseMotion, GAME_STATUS_TEXT_SCALE_ANIMATION_DURATION_SECONDS));
+		_chessEngineSkillLevelSelectorsMTs[i]->setUpdateCallback(animationPathCallback);
+	}
+}
+
+
+bool ChessBoard::manageAISkillLevelSelection(Vec2i selectorBoardPosition) {
+	if (selectorBoardPosition.y() == -2) {
+		switch (selectorBoardPosition.x()) {
+			case -4: { _chessEngineSkillLevel =  0; break; }
+			case -3: { _chessEngineSkillLevel =  2; break; }
+			case -2: { _chessEngineSkillLevel =  4; break; }
+			case -1: { _chessEngineSkillLevel =  8; break; }
+			case  1: { _chessEngineSkillLevel = 12; break; }
+			case  2: { _chessEngineSkillLevel = 16; break; }
+			case  3: { _chessEngineSkillLevel = 18; break; }
+			case  4: { _chessEngineSkillLevel = 20; break; }
+			default: return false;
+		}		
+	} else if (selectorBoardPosition.y() == 2) {
+		switch (selectorBoardPosition.x()) {
+			case -4: { _chessEngineSkillLevel = 20; break; }
+			case -3: { _chessEngineSkillLevel = 18; break; }
+			case -2: { _chessEngineSkillLevel = 16; break; }
+			case -1: { _chessEngineSkillLevel = 12; break; }
+			case  1: { _chessEngineSkillLevel =  8; break; }
+			case  2: { _chessEngineSkillLevel =  4; break; }
+			case  3: { _chessEngineSkillLevel =  2; break; }
+			case  4: { _chessEngineSkillLevel =  0; break; }
+			default: return false;
+		}		
+	} else {
+		return false;
+	}
+
+	_uciProtocol.startNewChessGame(_chessEngineSkillLevel);
+	_gameStatus = IN_PROGRESS;
+	hideAISkillLevelSelectors();
+	_chessEngineSkillLevelSelectionInProgress = false;
+
+	return true;
 }
 
 

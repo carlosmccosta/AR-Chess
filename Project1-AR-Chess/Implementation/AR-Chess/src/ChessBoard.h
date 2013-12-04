@@ -134,10 +134,11 @@ class ChessBoard : public osg::Referenced {
 		bool checkAndPerformPromotion(ChessPiece* chessPieceMoved, Vec2i finalPosition);
 		void setupPromotionPiecesOnBoad(ChessPieceColor chessPieceColor);
 		void managePromotionConversionAndReversion();
-		void removePromotionPiecesOnBoad();
+		void removePromotionPiecesOnBoad();		
 
 		bool isKingInCheck(Vec2i kingPosition, ChessPieceColor kingColor, bool seeIfWhiteKingIsInCheck, bool seeIfBlackKingIsInCheck);
 		bool isKingInCheckMate(Vec2i kingPosition, ChessPieceColor kingColor);
+		void updateGameStatusWithCheckOrCheckMate();
 
 		bool goToPreviousMoveInHistory();
 		bool goToNextMoveInHistory();
@@ -151,9 +152,16 @@ class ChessBoard : public osg::Referenced {
 		AuxiliarySelector isPositionAnAuxiliarySelector(Vec2i position);
 		ChessPiece* getChessPieceAtBoardPosition(int xBoardPosition, int yBoardPosition, ChessPieceColor chessPieceColor);	
 
-		void setupGameStatusText(Text3D* gameStatusText, float rotationAngle);
+		MatrixTransform* wrapAndChangeMTPosition(MatrixTransform* mt, Vec3 position, Vec3 scale, float rotationAngle);
+		MatrixTransform* wrapText(Text3D* gameStatusText);
 		void setGameStatusText(string text);
 		void clearGameStatusText();
+
+		void setupAISkillLevelSelectors();
+		MatrixTransform* setupAISkillLevelSelectorsOneSide(const vector<string>& skillLevels, int sceneYPositionIncrement, float rotationAngle);
+		void showAISkillLevelSelectors();
+		void hideAISkillLevelSelectors();
+		bool manageAISkillLevelSelection(Vec2i selectorBoardPosition);
 
 		// chess AI
 		bool isCurrentPlayerAI();
@@ -167,6 +175,9 @@ class ChessBoard : public osg::Referenced {
 		GameStatus _gameStatus;
 		Text3D* _gameStatusTextWhiteSide;
 		Text3D* _gameStatusTextBlackSide;
+		MatrixTransform* _gameStatusTextWhiteSideMT;
+		MatrixTransform* _gameStatusTextBlackSideMT;
+		bool _gameStatusTextVisible;
 		vector<ChessPiece*> _whiteChessPieces;
 		vector<ChessPiece*> _blackChessPieces;
 		vector<ChessPiece*> _promotionChessPieces;
@@ -201,6 +212,9 @@ class ChessBoard : public osg::Referenced {
 		Group* _boardSquareSelections;
 		Group* _boardSquarePossibleMoves;
 		Group* _promotionPieces;
+		Group* _chessEngineSkillLevelSelectors;
+		vector<MatrixTransform*> _chessEngineSkillLevelSelectorsMTs;
+		bool _chessEngineSkillLevelSelectionInProgress;
 
 		ElapsedTime* _selectorTimer;
 		ElapsedTime* _animationDelayBetweenMoves;

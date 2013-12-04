@@ -6,6 +6,7 @@
 #define UCI_SET_SKILL_LEVEL "setoption name Skill Level value "
 #define UCI_SET_BOOK_FILE "setoption name Book File value "
 #define UCI_SET_BEST_BOOK_MOVE "setoption name Best Book Move value true"
+#define UCI_UNSET_BEST_BOOK_MOVE "setoption name Best Book Move value false"
 #define UCI_SET_OWN_BOOK "setoption name OwnBook value true"
 #define UCI_ISREADY "isready"
 #define UCI_READYOK "readyok"
@@ -51,7 +52,7 @@ using osg::Referenced;
 
 
 
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  <UCIProtocolSearchThread> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  <EngineToGUICommunicationThread> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 class EngineToGUICommunicationThread : public OpenThreads::Thread {
 public:
 	EngineToGUICommunicationThread() {}
@@ -68,7 +69,7 @@ protected:
 
 	stream<file_descriptor_source>* _engineToGuiStream;
 };
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  </UCIProtocolSearchThread> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  </EngineToGUICommunicationThread> <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
 
