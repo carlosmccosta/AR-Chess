@@ -76,7 +76,7 @@ void ChessScene::setupARTrackers() {
 		exit(-1);
 	}
 
-	if (_boardScene->addVisualTracker(VIDEO_PLUGIN, TRACKER_PLUGIN, CAMERA_CONFIG) == NULL) {
+	if (_boardScene->addVisualTracker(/*VIDEO_PLUGIN*/ TRACKER_PLUGIN, TRACKER_PLUGIN, CAMERA_CONFIG) == NULL) {
 		osg::notify(osg::FATAL) << "Could not initialize tracker plug-in!" << std::endl;
 		exit(-2);
 	}

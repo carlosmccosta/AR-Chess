@@ -428,8 +428,8 @@ bool ChessBoard::updateBoard(Vec2i selectorBoardPosition) {
 					// first selection (0 is an invalid position)
 					if (_moveOriginPosition.x() == 0) {
 						return processFirstSelection(selectorBoardPosition);
-					} else {
-						return processSecondSelection(selectorBoardPosition);
+					} else {						
+						return processSecondSelection(selectorBoardPosition);					
 					}
 				}
 			}
@@ -593,8 +593,12 @@ bool ChessBoard::processSecondSelection(Vec2i selectorBoardPosition, bool player
 		return false;
 	}	
 
-	// second selection (if not defined yet)
-	if (_moveDestinationPosition.x() == 0 && (movePositionStatus == POSITION_AVAILABLE || movePositionStatus == POSITION_WITH_OPPONENT_PIECE)) {
+	// second selection (if not defined yet)	
+	if (_moveDestinationPosition.x() == 0 && (movePositionStatus == POSITION_AVAILABLE || movePositionStatus == POSITION_WITH_OPPONENT_PIECE)) {		
+		if (!playerIsAI && !isPositionInPossibleMoves(selectorBoardPosition)) {
+			return false;
+		}
+
 		_moveDestinationPosition.x() = selectorBoardPosition.x();
 		_moveDestinationPosition.y() = selectorBoardPosition.y();		
 
@@ -832,6 +836,21 @@ bool ChessBoard::showPossibleMoves(ChessPiece* chessPiece) {
 
 		return true;
 	}
+
+	return false;
+}
+
+
+bool ChessBoard::isPositionInPossibleMoves(Vec2i position) {
+	if (_pieceSelectedPossibleMoves == NULL || _pieceSelectedPossibleMoves->empty()) {
+		return false;
+	}
+
+	for (size_t i = 0; i < _pieceSelectedPossibleMoves->size(); ++i) {
+		if (_pieceSelectedPossibleMoves->at(i) == position) {
+			return true;
+		}
+	}	
 
 	return false;
 }

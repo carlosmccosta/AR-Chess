@@ -120,6 +120,7 @@ class ChessBoard : public osg::Referenced {
 		bool hightLighPossibleMove(int xBoardPosition, int yBoardPosition);
 		ChessPiece* selectPosition(int xBoardPosition, int yBoardPosition, ChessPieceColor chessPieceColor, bool selectOnlyIfExistsPiece = false, AuxiliarySelector auxiliarySelector = SELECTOR_INVALID);
 		bool showPossibleMoves(ChessPiece* chessPiece);
+		bool isPositionInPossibleMoves(Vec2i position);
 		Vec2iArray* computePossibleMovePositions(ChessPiece* chessPiece, bool seeIfWhiteKingIsInCheck, bool seeIfBlackKingIsInCheck);
 		bool isMoveValid(Vec2i initialPosition, Vec2i finalPosition, ChessPieceColor chessPieceColor, bool seeIfWhiteKingIsInCheck, bool seeIfBlackKingIsInCheck);
 		bool updatePossibleMoves(Vec2i initialPosition, Vec2i finalPosition, ChessPieceColor chessPieceColor, bool seeIfWhiteKingIsInCheck, bool seeIfBlackKingIsInCheck, Vec2iArray* possibleMoves);

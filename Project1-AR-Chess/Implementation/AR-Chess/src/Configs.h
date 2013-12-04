@@ -72,8 +72,8 @@
 #define GAME_STATUS_TEXT_WHITE_WON "White player won!"
 #define GAME_STATUS_TEXT_BLACK_WON "Black player won!"
 
-#define WHITE_PLAYER_STATUS_IMG "images/white_player_status.png"
-#define BLACK_PLAYER_STATUS_IMG "images/black_player_status.png"
+#define WHITE_PLAYER_STATUS_IMG "images/player_status_white.png"
+#define BLACK_PLAYER_STATUS_IMG "images/player_status_black.png"
 #define PLAYER_STATUS_WIDTH 65
 #define PLAYER_STATUS_HEIGHT 12
 #define PLAYER_STATUS_Z_OFFSET -1
