@@ -53,7 +53,7 @@ Figure 10 - King check mate
 
 
 ## Releases
-[Windows release](https://github.com/carlosmccosta/AR-Chess/tree/master/Releases/Windows)
+[Windows 8.1 release](https://github.com/carlosmccosta/AR-Chess/tree/master/Releases/Windows)
 
 
 
