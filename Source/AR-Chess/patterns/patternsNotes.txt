@@ -1,0 +1,7 @@
+In order to have proper detection of distances:
+ -> board.pdf should be printed in A4 paper
+ -> selector.pdf should be printed in A4 paper with 65% scale
+
+ The size of the real markers should be:
+ -> 50 mm for the selector outer square
+ -> 40 mm for each outer square of the board markers
