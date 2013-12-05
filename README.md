@@ -11,7 +11,7 @@ It allows users to play chess games against a chess engine or against another hu
 * Implements and enforces all chess rules
 * Possible moves are shown for the chess piece the player wants to move
 * Player isn't allowed to make invalid moves
-* All user interaction is done with 2 markers (1 for the board and 1 for the selector)
+* All user interaction is done with [2 markers](https://github.com/carlosmccosta/AR-Chess/tree/master/Source/AR-Chess/patterns) (1 for the board and 1 for the selector)
 
 [![AR-Chess demo](https://raw.github.com/carlosmccosta/AR-Chess/master/Screenshots/AR-Chess.png)](http://www.youtube.com/watch?v=id)
 AR-Chess GUI
