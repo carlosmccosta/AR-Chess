@@ -1,0 +1,215 @@
+################################################################################################################
+### Dependencies
+################################################################################################################
+-> Add folder to system path (use http://www.rapidee.com/ to speed up path editing)
+libsWindows/dlls
+
+
+
+################################################################################################################
+### Glut
+################################################################################################################
+-> Add folder to system path
+libsWindows/glut-3.7.6-bin
+
+-> copy libsWindows/glut-3.7.6-bin/glut.h to C:\Program Files (x86)\Windows Kits\8.0\Include\um\gl
+-> copy libsWindows/glut-3.7.6-bin/glut32.lib to C:\Program Files (x86)\Windows Kits\8.0\Lib\win8\um\x86
+
+
+
+################################################################################################################
+### ARToolkit
+################################################################################################################
+==> Option 1 (recommended, since the libraries were recompiled with the VS12 in debug mode, and as such,
+			  avoids any incompatibilities from using different versions of the vc compiler)
+	Extract libsWindows\ARToolKit.rar to C:/Program Files (x86)/ARToolKit
+
+==> Option 2
+	Use official version, (that was compiled with a previous version of vc compiler)
+
+-> download latest version and install to C:\Program Files (x86)\ARToolKit
+http://www.hitl.washington.edu/artoolkit/download/index.html
+http://sourceforge.net/projects/artoolkit/files/artoolkit/2.72.1/
+http://sourceforge.net/projects/artoolkit/files/artoolkit/2.72.1/ARToolKit-2.72.1-bin-win32.zip/download
+
+
+==> Rest of configuration
+
+-> Add folder to system path
+C:\Program Files (x86)\ARToolKit\bin
+
+
+
+################################################################################################################
+### CMake
+################################################################################################################
+==> Step not necessary if not building osgART from source
+
+-> Install cmake
+http://www.cmake.org/cmake/resources/software.html
+http://www.cmake.org/files/v2.8/cmake-2.8.12.1-win32-x86.exe
+
+
+
+################################################################################################################
+### OpenSceneGraph
+################################################################################################################
+==> Option 1
+	Extract libsWindows\OpenSceneGraph.rar to C:/Program Files (x86)/OpenSceneGraph
+
+==> Option 2
+	Build from source (can take more than 1 hour to compile OSG...)
+
+-> download source code of latest OSG
+http://www.openscenegraph.org/index.php/download-section/stable-releases
+http://www.openscenegraph.org/downloads/developer_releases/OpenSceneGraph-3.2.0.zip
+
+-> download OSG dependencies
+http://www.openscenegraph.org/index.php/download-section/dependencies
+http://www.osgvisual.org/public_download/3rdParty_VS2012.3_v110_x86_x64_V8b_full.7z
+
+-> configure project with CMake
+In order for the cmake to find the downloaded dependencies automatically,
+the environment variable OSG_3RDPARTY_DIR should point to the 3rdParty folder and
+the folder tree structure should be
+OSG-3.2.0
+	OpenSceneGraph-3.2.0
+		applications
+		...
+	3rdParty
+		bin
+		...
+
++ open cmake-gui
++ specify src as OpenSceneGraph-3.2.0 and build as OpenSceneGraph-3.2.0\build
++ configure to Visual Studio 11 (version 11 is Visual Studio 2012)
++ generate
+
+
+-> build and install with Visual Studio 2012
+http://www.openscenegraph.org/index.php/documentation/platform-specifics/windows/37-visual-studio
++ open .sln file in build directory with Visual Studio 2012 in administrator mode
++ all projects should have No (/SAFESEH:NO) selected, in order to be compatible with the artoolkit dlls
+	-> Project properties -> Configuration Properties -> Linker -> Advanced -> Image Has Safe Exceptions Handles
++ build project ALL_BUILD
++ build project INSTALL
+
+
+==> Rest of configuration
+
+-> Add folders to system path
+C:/Program Files (x86)/OpenSceneGraph/bin
+OSG-3.2.0/3rdParty/bin
+
+-> Add system variable
+OSG_ROOT
+C:\Program Files (x86)\OpenSceneGraph
+
+
+
+################################################################################################################
+### osgART
+################################################################################################################
+==> Option 1
+	Extract libsWindows\osgART.rar to C:/Program Files (x86)/osgART
+
+==> Option 2
+	Build from source
+
+-> download source code of osgART
+http://www.osgart.org/index.php/Main_Page
+https://github.com/seichter/osgART
+https://github.com/seichter/osgART/archive/master.zip
+http://www.osgart.org/index.php/Installing_osgART_under_Windows_(source)
+
+
+-> configure with cmake (if only the debug version of osg was compiled, then the debug libs must be supplied instead of the release ones, in order to allow cmake to finish the configuration files)
+-> select OSGART_BUILD_PLUGIN_ARTOOLKIT and OSGART_BUILD_PLUGIN_DSVL in cmake-gui (advanced)
+-> change the 124 line in CMakeLists.txt to
+	COMPONENT "API Documentation reenable when moving up to 2.6"
++ open .sln file in build directory with Visual Studio 2012 in administrator mode
++ all projects should have No (/SAFESEH:NO) selected, in order to be compatible with the artoolkit dlls
+	-> Project properties -> Configuration Properties -> Linker -> Advanced -> Image Has Safe Exceptions Handles
++ build project ALL_BUILD
++ build project INSTALL
+
+copy build/bin/debug *.dll and *.pdb to C:\Program Files (x86)\osgART\bin
+copy build/lib/debug *.dll, *.lib, *.pdb and *.exp  to C:\Program Files (x86)\osgART\lib
+
+
+==> Rest of configuration
+
+-> Add folders to system path
+C:\Program Files (x86)\osgART\bin
+C:\Program Files (x86)\osgART\lib
+
+-> For running the examples it is necessary to add the system variable OSG_FILE_PATH, for the osgDB be able to find the necessary resources
+(be aware this will override the data folder in the VS project, so after running the examples remove it from the path and restart Visual Studio)
+OSG_FILE_PATH
+C:\Program Files (x86)\osgART\share\osgART
+
+
+################################################################################################################
+### Boost
+################################################################################################################
+Install the c++ Boost libraries to C:\Program Files (x86)\boost_1_55_0
+http://sourceforge.net/projects/boost/files/boost-binaries/1.55.0-build2/
+http://sourceforge.net/projects/boost/files/boost-binaries/1.55.0-build2/boost_1_55_0-msvc-11.0-32.exe/download
+
+Install the Boost process in the respective boost directories
+http://www.highscore.de/boost/process0.5/
+http://www.highscore.de/boost/process0.5/process.zip
+
+
+
+################################################################################################################
+### Visual Studio 2012 or
+### Visual Studio 2013 (using Visual Studio 2012 platform toolset in project properties to avoid dll problems)
+################################################################################################################
+-> Project properties -> Configuration Properties -> C/C+ -> General -> Additional Include Directories
+C:\Program Files (x86)\osgART\include
+C:\Program Files (x86)\boost_1_55_0
+
+-> Project properties -> Configuration Properties -> C/C+ -> Preprocessor -> Preprocessor Definitions
+WIN32
+_WINDOWS
+_CRT_SECURE_NO_WARNINGS
+_SCL_SECURE_NO_WARNINGS
+_DEBUG
+
+
+-> Project properties -> Configuration Properties -> Linker -> General -> Additional Library Directories
+C:\Program Files (x86)\boost_1_55_0\lib32-msvc-11.0
+C:\Program Files (x86)\osgART\lib
+
+-> Project properties -> Configuration Properties -> Linker -> Input -> Additional Dependencies
+# Debug:
+osgART_debug.lib
+osgAnimationd.lib
+osgd.lib
+osgDBd.lib
+osgFXd.lib
+osgGAd.lib
+OpenThreadsd.lib
+osgParticled.lib
+osgSimd.lib
+osgShadowd.lib
+osgTextd.lib
+osgViewerd.lib
+
+#Release:
+osgART.lib
+osgAnimation.lib
+osg.lib
+osgDB.lib
+osgFX.lib
+osgGA.lib
+OpenThreads.lib
+osgParticle.lib
+osgSim.lib
+osgShadow.lib
+osgText.lib
+osgViewer.lib
+
+-> Project properties -> Configuration Properties -> Linker -> Advanced -> Image Has Safe Exceptions Handles
+No (/SAFESEH:NO)
