@@ -21,4 +21,4 @@ AR-Chess GUI
 [Windows release](https://github.com/carlosmccosta/AR-Chess/tree/master/Releases/Windows)
 
 ## Building and developing
-The setup instructions on how to build and develop in Visual Studio is available [here](https://raw.github.com/carlosmccosta/AR-Chess/master/Source/Configuration/Visual%20Studio%20configuration.txt)
+The setup instructions on how to build and develop in Visual Studio is available [here](https://github.com/carlosmccosta/AR-Chess/blob/master/Source/Configuration/Visual%20Studio%20configuration.txt)
