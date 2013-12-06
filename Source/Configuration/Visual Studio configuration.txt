@@ -166,21 +166,40 @@ http://www.highscore.de/boost/process0.5/process.zip
 ### Visual Studio 2012 or
 ### Visual Studio 2013 (using Visual Studio 2012 platform toolset in project properties to avoid dll problems)
 ################################################################################################################
+==> Option 1
+	Open Source\AR-Chess\AR-Chess.sln in Visual Studio 2012 or 2013
+	This VS solution file has all configurations necessary to compile and run, as long as the paths mentioned in the above steps are correct
+	Check paths bellow before compiling
+
+
+==> Option 2
+	Create a new VS C++ project, import source files and configure it's properties
+
+
 -> Project properties -> Configuration Properties -> C/C+ -> General -> Additional Include Directories
 C:\Program Files (x86)\osgART\include
 C:\Program Files (x86)\boost_1_55_0
 
+
 -> Project properties -> Configuration Properties -> C/C+ -> Preprocessor -> Preprocessor Definitions
+# Debug:
 WIN32
 _WINDOWS
 _CRT_SECURE_NO_WARNINGS
 _SCL_SECURE_NO_WARNINGS
 _DEBUG
 
+#Release:
+WIN32
+_WINDOWS
+_CRT_SECURE_NO_WARNINGS
+_SCL_SECURE_NO_WARNINGS
+
 
 -> Project properties -> Configuration Properties -> Linker -> General -> Additional Library Directories
 C:\Program Files (x86)\boost_1_55_0\lib32-msvc-11.0
 C:\Program Files (x86)\osgART\lib
+
 
 -> Project properties -> Configuration Properties -> Linker -> Input -> Additional Dependencies
 # Debug:
@@ -210,6 +229,7 @@ osgSim.lib
 osgShadow.lib
 osgText.lib
 osgViewer.lib
+
 
 -> Project properties -> Configuration Properties -> Linker -> Advanced -> Image Has Safe Exceptions Handles
 No (/SAFESEH:NO)
