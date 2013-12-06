@@ -184,6 +184,8 @@ class ChessBoard : public osg::Referenced {
 		vector<ChessPiece*> _promotionChessPieces;
 		vector<ChessMoveHistory*> _pieceMovesHistoryBackwardsStack;
 		vector<ChessMoveHistory*> _pieceMovesHistoryFowardStack;
+		bool _movedBackwards;
+
 		ChessPieceColor _currentPlayer;
 		ChessPiece* _pieceToMove;
 		ChessPiece* _pieceKingWhite;

@@ -9,6 +9,7 @@ ChessBoard::ChessBoard() {
 	_lastSelectorBoardPosition = Vec2i(0, 0);
 		
 	_boardReseting = false;
+	_movedBackwards = false;
 
 	_whitePlayerIsAI = false;
 	_blackPlayerIsAI = false;
@@ -380,11 +381,13 @@ bool ChessBoard::updateBoard(Vec2i selectorBoardPosition) {
 
 
 					// go back in history moves again if a human player is against a AI player and it wants to undo last move
-					if (isCurrentPlayerAI() && !isOpponentPlayerAI() && !_pieceMovesHistoryFowardStack.empty()) {
+					if (isCurrentPlayerAI() && !isOpponentPlayerAI() && _movedBackwards) {
 						goToPreviousMoveInHistory();
 					} else {
 						_animationInProgress = false;
 					}
+
+					_movedBackwards = false;
 				}
 			}
 		}
@@ -1472,7 +1475,8 @@ bool ChessBoard::goToPreviousMoveInHistory() {
 		_animationDelayBetweenMoves->reset();
 		--_currentPlayNumber;
 		_animationInProgress = true;
-		_gameStatus = IN_PROGRESS;			
+		_gameStatus = IN_PROGRESS;	
+		_movedBackwards = true;
 		return true;
 	}
 
