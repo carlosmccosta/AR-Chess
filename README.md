@@ -19,7 +19,7 @@ It allows users to play chess games against a chess engine or against another hu
 * Uses OpenSceneGraph for 3D rendering (press h for help and to see keyboard shortcuts)
 
 
-[![AR-Chess demo](https://raw.github.com/carlosmccosta/AR-Chess/master/Screenshots/AR-Chess.png)](http://www.youtube.com/watch?v=jmskA1LILkk)
+[![AR-Chess demo](https://raw.github.com/carlosmccosta/AR-Chess/master/Screenshots/AR-Chess.png)](http://www.youtube.com/watch?v=GOzPtKTbHsU)
 Vídeo 1 - AR-Chess gameplay
 
 
